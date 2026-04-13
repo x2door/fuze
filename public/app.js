@@ -1,4 +1,3 @@
-const BEAD_SIZE_MM = 2.6;
 const EDGE_SNAP_PX = 24;
 const NEAR_FULL_CROP_RATIO = 0.96;
 const CROP_HANDLE_SIZE = 12;
@@ -55,7 +54,58 @@ const PALETTE = [
   { id: "persian-indigo", name: "Persian Indigo", hex: "#462d84" },
 ];
 
+const PERLER_LARGE_TRAY = [
+  { id: "perler-lt-white", code: "PL01", name: "White", hex: "#f4f1ea" },
+  { id: "perler-lt-black", code: "PL02", name: "Black", hex: "#15161a" },
+  { id: "perler-lt-pastel-blue", code: "PL03", name: "Pastel Blue", hex: "#89bce8" },
+  { id: "perler-lt-light-green", code: "PL04", name: "Light Green", hex: "#9bd873" },
+  { id: "perler-lt-yellow", code: "PL05", name: "Yellow", hex: "#f4d84f" },
+  { id: "perler-lt-raspberry", code: "PL06", name: "Raspberry", hex: "#c23979" },
+  { id: "perler-lt-pink", code: "PL07", name: "Pink", hex: "#e89ab8" },
+  { id: "perler-lt-blush", code: "PL08", name: "Blush", hex: "#f0c8c2" },
+  { id: "perler-lt-brown", code: "PL09", name: "Brown", hex: "#6f4a35" },
+  { id: "perler-lt-evergreen", code: "PL10", name: "Evergreen", hex: "#2a7857" },
+  { id: "perler-lt-parrot-green", code: "PL11", name: "Parrot Green", hex: "#48b84c" },
+  { id: "perler-lt-pastel-lavender", code: "PL12", name: "Pastel Lavender", hex: "#cfb9ea" },
+  { id: "perler-lt-light-grey", code: "PL13", name: "Light Grey", hex: "#b8bcc5" },
+  { id: "perler-lt-prickly-pear", code: "PL14", name: "Prickly Pear", hex: "#c7d85a" },
+  { id: "perler-lt-transparent-turquoise", code: "PL15", name: "Transparent Turquoise", hex: "#67cfd6" },
+  { id: "perler-lt-plum", code: "PL16", name: "Plum", hex: "#7a4ba8" },
+];
+
+const PERLER_SUMMER_TRAY = [
+  { id: "perler-st-light-pink", code: "PS01", name: "Light Pink", hex: "#f4c9d7" },
+  { id: "perler-st-red", code: "PS02", name: "Red", hex: "#d94b4b" },
+  { id: "perler-st-orange", code: "PS03", name: "Orange", hex: "#ec8d2b" },
+  { id: "perler-st-cheddar", code: "PS04", name: "Cheddar", hex: "#f0b636" },
+  { id: "perler-st-yellow", code: "PS05", name: "Yellow", hex: "#f4d84f" },
+  { id: "perler-st-kiwi-lime", code: "PS06", name: "Kiwi Lime", hex: "#9ed94a" },
+  { id: "perler-st-dark-green", code: "PS07", name: "Dark Green", hex: "#2e7f46" },
+  { id: "perler-st-toothpaste", code: "PS08", name: "Toothpaste", hex: "#71d4d1" },
+  { id: "perler-st-turquoise", code: "PS09", name: "Turquoise", hex: "#4ab9c7" },
+  { id: "perler-st-pastel-lavender", code: "PS10", name: "Pastel Lavender", hex: "#cfb9ea" },
+  { id: "perler-st-purple", code: "PS11", name: "Purple", hex: "#8555bf" },
+  { id: "perler-st-butterscotch", code: "PS12", name: "Butterscotch", hex: "#bb7a42" },
+  { id: "perler-st-light-brown", code: "PS13", name: "Light Brown", hex: "#ba8a63" },
+  { id: "perler-st-sand", code: "PS14", name: "Sand", hex: "#d8be92" },
+  { id: "perler-st-white", code: "PS15", name: "White", hex: "#f4f1ea" },
+  { id: "perler-st-black", code: "PS16", name: "Black", hex: "#15161a" },
+];
+
+const PERLER_NEUTRAL_TRAY = [
+  { id: "perler-nt-clear", code: "PN01", name: "Clear", hex: "#cfd5da" },
+  { id: "perler-nt-white", code: "PN02", name: "White", hex: "#f4f1ea" },
+  { id: "perler-nt-grey", code: "PN03", name: "Grey", hex: "#9fa4ad" },
+  { id: "perler-nt-black", code: "PN04", name: "Black", hex: "#15161a" },
+  { id: "perler-nt-sand", code: "PN05", name: "Sand", hex: "#d8be92" },
+  { id: "perler-nt-tan", code: "PN06", name: "Tan", hex: "#c8a37e" },
+  { id: "perler-nt-light-brown", code: "PN07", name: "Light Brown", hex: "#ba8a63" },
+  { id: "perler-nt-brown", code: "PN08", name: "Brown", hex: "#6f4a35" },
+];
+
 const state = {
+  selectedPalettePresetId: "artkal-48",
+  mobileView: "setup",
   image: null,
   imageName: "",
   imageWidth: 0,
@@ -95,6 +145,8 @@ const refs = {
   shadowLiftValue: document.getElementById("shadowLiftValue"),
   highlightRecovery: document.getElementById("highlightRecovery"),
   highlightRecoveryValue: document.getElementById("highlightRecoveryValue"),
+  palettePreset: document.getElementById("palettePreset"),
+  palettePresetNote: document.getElementById("palettePresetNote"),
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
@@ -117,12 +169,17 @@ const refs = {
   instructionMeta: document.getElementById("instructionMeta"),
   legendList: document.getElementById("legendList"),
   instructionList: document.getElementById("instructionList"),
+  controlsPanel: document.querySelector(".controls-panel"),
+  outputPanel: document.querySelector(".output-panel"),
+  mobileViewPanels: [...document.querySelectorAll("[data-mobile-view-panel]")],
+  mobileViewButtons: [...document.querySelectorAll("[data-mobile-view-trigger]")],
 };
 
 const sourceCtx = refs.sourceCanvas.getContext("2d");
 const patternCtx = refs.patternCanvas.getContext("2d");
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const isMobileLayout = () => window.innerWidth <= 720;
 
 const hexToRgb = (hex) => {
   const normalized = hex.replace("#", "");
@@ -176,11 +233,43 @@ const createPaletteEntry = (entry, fallbackCode) => {
   };
 };
 
-const basePaletteEntries = PALETTE.map((entry, index) =>
+const artkalStyle48Entries = PALETTE.map((entry, index) =>
   createPaletteEntry(entry, String(index + 1).padStart(2, "0")),
 );
 
-const getPaletteEntries = () => [...basePaletteEntries, ...state.customPalette];
+const PALETTE_PRESETS = [
+  {
+    id: "artkal-48",
+    name: "Artkal-style 48 color chart",
+    note: "Good default and close to the chart you uploaded.",
+    entries: artkalStyle48Entries,
+  },
+  {
+    id: "perler-large-tray",
+    name: "Perler Mini Large Tray (16)",
+    note: "Mini Perler tray with 16 colors for general-purpose mini projects.",
+    entries: PERLER_LARGE_TRAY.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
+    id: "perler-summer-tray",
+    name: "Perler Summer Mini Tray (16)",
+    note: "Warm and bright mini tray for colorful projects and seasonal art.",
+    entries: PERLER_SUMMER_TRAY.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
+    id: "perler-neutral-tray",
+    name: "Perler Mini Neutral Tray (8)",
+    note: "Compact neutral mini palette for grayscale, skin, wood, and outline-heavy work.",
+    entries: PERLER_NEUTRAL_TRAY.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+];
+
+const getPalettePreset = (presetId) =>
+  PALETTE_PRESETS.find((preset) => preset.id === presetId) || PALETTE_PRESETS[0];
+
+const getBasePaletteEntries = () => getPalettePreset(state.selectedPalettePresetId).entries;
+
+const getPaletteEntries = () => [...getBasePaletteEntries(), ...state.customPalette];
 
 const getLabHueDegrees = (labColor) => {
   const angle = (Math.atan2(labColor.b, labColor.a) * 180) / Math.PI;
@@ -876,6 +965,91 @@ const updatePaletteCounter = () => {
   refs.activePaletteCount.textContent = String(state.activePaletteIds.size);
 };
 
+const renderMobileView = () => {
+  const mobile = isMobileLayout();
+  document.body.classList.toggle("mobile-nav-enabled", mobile);
+
+  refs.controlsPanel.classList.toggle(
+    "mobile-view-hidden",
+    mobile && state.mobileView === "pattern",
+  );
+  refs.outputPanel.classList.toggle(
+    "mobile-view-hidden",
+    mobile && state.mobileView !== "pattern",
+  );
+
+  refs.mobileViewPanels.forEach((panel) => {
+    if (!mobile) {
+      panel.classList.remove("mobile-view-hidden");
+      return;
+    }
+
+    const panelView = panel.dataset.mobileViewPanel;
+    const isVisible =
+      panelView === "pattern"
+        ? state.mobileView === "pattern"
+        : state.mobileView !== "pattern" && panelView === state.mobileView;
+
+    panel.classList.toggle("mobile-view-hidden", !isVisible);
+  });
+
+  refs.mobileViewButtons.forEach((button) => {
+    const isActive = button.dataset.mobileViewTrigger === state.mobileView;
+    button.classList.toggle("mobile-nav-button-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+};
+
+const setMobileView = (view, options = {}) => {
+  const { scroll = true } = options;
+  state.mobileView = view;
+  renderMobileView();
+
+  if (!isMobileLayout()) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    if (view === "setup" && state.image) {
+      drawImagePreview();
+    }
+    if (view === "pattern" && state.pattern) {
+      drawPatternPreview();
+    }
+
+    if (scroll) {
+      const target =
+        view === "pattern"
+          ? refs.outputPanel
+          : refs.controlsPanel;
+      target?.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+  });
+};
+
+const refreshPalettePresetUi = () => {
+  const preset = getPalettePreset(state.selectedPalettePresetId);
+  refs.palettePreset.value = preset.id;
+  refs.palettePresetNote.textContent = `${preset.note} Manual colors stay available on top of the preset.`;
+};
+
+const applyPalettePreset = (presetId) => {
+  state.selectedPalettePresetId = getPalettePreset(presetId).id;
+  state.activePaletteIds = new Set(getPaletteEntries().map((entry) => entry.id));
+  state.pattern = null;
+  refreshPalettePresetUi();
+  updatePaletteCounter();
+  savePreferences();
+  renderPalette();
+  if (state.image) {
+    generatePattern();
+  } else {
+    renderStats();
+    renderLegend();
+    renderInstructions();
+  }
+};
+
 const sanitizeInventoryEntry = (value) => {
   const owned =
     value && value.owned !== "" && Number.isFinite(Number(value.owned))
@@ -891,6 +1065,7 @@ const sanitizeInventoryEntry = (value) => {
 const savePreferences = () => {
   try {
     const payload = {
+      selectedPalettePresetId: state.selectedPalettePresetId,
       activePaletteIds: [...state.activePaletteIds],
       customPalette: state.customPalette.map(({ id, code, name, hex }) => ({
         id,
@@ -921,6 +1096,10 @@ const loadPreferences = () => {
     }
 
     const saved = JSON.parse(raw);
+
+    if (typeof saved.selectedPalettePresetId === "string") {
+      state.selectedPalettePresetId = getPalettePreset(saved.selectedPalettePresetId).id;
+    }
 
     if (Array.isArray(saved.customPalette)) {
       state.customPalette = saved.customPalette
@@ -973,6 +1152,8 @@ const loadPreferences = () => {
     ) {
       refs.inventoryBalancing.value = saved.inventoryBalancing;
     }
+
+    refreshPalettePresetUi();
   } catch (error) {
     console.warn("Unable to load saved palette preferences.", error);
   }
@@ -984,6 +1165,7 @@ const getUsedColors = (pattern) =>
       color: getPaletteEntries().find((entry) => entry.id === id),
       count,
     }))
+    .filter((item) => item.color)
     .sort((left, right) => right.count - left.count);
 
 const getInventorySettings = (colorId) => {
@@ -1364,7 +1546,7 @@ const scorePaletteCandidate = (sourceLab, candidate, mode) => {
   return score;
 };
 
-const scoreInventoryPenalty = (candidate, counts, balanceMode) => {
+const scoreInventoryPenalty = (candidate, counts, balanceMode, progressRatio = 1) => {
   if (balanceMode === "off") {
     return 0;
   }
@@ -1375,11 +1557,17 @@ const scoreInventoryPenalty = (candidate, counts, balanceMode) => {
           lowInventoryPenalty: 16,
           usagePenalty: 24,
           shortagePenalty: 70,
+          pacingPenalty: 48,
+          pacingGraceRatio: 0.04,
+          pacingGraceBeads: 1,
         }
       : {
           lowInventoryPenalty: 8,
           usagePenalty: 12,
           shortagePenalty: 36,
+          pacingPenalty: 24,
+          pacingGraceRatio: 0.08,
+          pacingGraceBeads: 2,
         };
 
   const inventory = getInventorySettings(candidate.id);
@@ -1397,9 +1585,19 @@ const scoreInventoryPenalty = (candidate, counts, balanceMode) => {
 
   const projectedUsage = usedCount + 1;
   const usageRatio = projectedUsage / ownedCount;
+  const allowedUsageByNow = Math.max(
+    settings.pacingGraceBeads,
+    Math.ceil(ownedCount * progressRatio + ownedCount * settings.pacingGraceRatio),
+  );
+  const pacingExcess = Math.max(0, projectedUsage - allowedUsageByNow);
 
   if (usageRatio > 1) {
     return penalty + settings.shortagePenalty + (usageRatio - 1) * settings.shortagePenalty;
+  }
+
+  if (pacingExcess > 0) {
+    const pacingPressure = pacingExcess / Math.max(ownedCount, 1);
+    penalty += settings.pacingPenalty * (1 + pacingPressure * ownedCount * 0.08);
   }
 
   if (usageRatio > 0.6) {
@@ -1410,7 +1608,7 @@ const scoreInventoryPenalty = (candidate, counts, balanceMode) => {
   return penalty;
 };
 
-const findClosestPaletteColor = (labColor, activePalette, counts) => {
+const findClosestPaletteColor = (labColor, activePalette, counts, progressRatio) => {
   let winner = activePalette[0];
   let bestDistance = Number.POSITIVE_INFINITY;
   const matchingMode = getMatchingMode();
@@ -1419,7 +1617,7 @@ const findClosestPaletteColor = (labColor, activePalette, counts) => {
   for (const candidate of activePalette) {
     const distance =
       scorePaletteCandidate(labColor, candidate, matchingMode) +
-      scoreInventoryPenalty(candidate, counts, inventoryBalanceMode);
+      scoreInventoryPenalty(candidate, counts, inventoryBalanceMode, progressRatio);
     if (distance < bestDistance) {
       bestDistance = distance;
       winner = candidate;
@@ -1442,11 +1640,13 @@ const makePattern = () => {
   const activePalette = getPaletteEntries().filter((entry) => state.activePaletteIds.has(entry.id));
   const cells = [];
   const counts = new Map();
+  const totalCells = width * height;
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const index = (y * width + x) * 4;
       const alpha = data[index + 3];
+      const progressRatio = (y * width + x + 1) / totalCells;
 
       if (alpha < 36) {
         if (backgroundMode === "empty") {
@@ -1466,7 +1666,12 @@ const makePattern = () => {
         g: data[index + 1],
         b: data[index + 2],
       };
-      const matched = findClosestPaletteColor(rgbToLab(currentRgb), activePalette, counts);
+      const matched = findClosestPaletteColor(
+        rgbToLab(currentRgb),
+        activePalette,
+        counts,
+        progressRatio,
+      );
 
       cells.push(matched);
       counts.set(matched.id, (counts.get(matched.id) || 0) + 1);
@@ -1660,7 +1865,7 @@ const renderStats = () => {
     setStats([
       { label: "Pattern size", value: "Waiting for image" },
       { label: "Total beads", value: "-" },
-      { label: "Physical size", value: "-" },
+      { label: "Rows", value: "-" },
       { label: "Distinct colors used", value: "-" },
     ]);
     return;
@@ -1668,13 +1873,11 @@ const renderStats = () => {
 
   const { width, height, counts } = state.pattern;
   const totalBeads = [...counts.values()].reduce((sum, value) => sum + value, 0);
-  const widthCm = (width * BEAD_SIZE_MM) / 10;
-  const heightCm = (height * BEAD_SIZE_MM) / 10;
 
   setStats([
     { label: "Pattern size", value: `${width} x ${height} beads` },
     { label: "Total beads", value: formatNumber(totalBeads) },
-    { label: "Physical size", value: `${widthCm.toFixed(1)} x ${heightCm.toFixed(1)} cm` },
+    { label: "Rows", value: formatNumber(height) },
     { label: "Distinct colors used", value: formatNumber(counts.size) },
   ]);
 };
@@ -2063,7 +2266,7 @@ const exportInstructionSheet = () => {
   ctx.font = '32px "IBM Plex Sans", sans-serif';
   ctx.fillStyle = "#b5b1ab";
   ctx.fillText(
-    `${safeName} | ${state.pattern.width} x ${state.pattern.height} beads | 2.6 mm mini beads`,
+    `${safeName} | ${state.pattern.width} x ${state.pattern.height} beads`,
     padding,
     currentY + 110,
   );
@@ -2254,12 +2457,29 @@ refs.highlightRecovery.addEventListener("input", () => {
     generatePattern();
   }
 });
+refs.palettePreset.addEventListener("change", () => {
+  applyPalettePreset(refs.palettePreset.value);
+});
+refs.mobileViewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextView = button.dataset.mobileViewTrigger;
+    if (!nextView) {
+      return;
+    }
+    setMobileView(nextView);
+  });
+});
 refs.lockAspect.addEventListener("change", () => {
   if (refs.lockAspect.checked) {
     syncAspectFromWidth();
   }
 });
-refs.generateBtn.addEventListener("click", generatePattern);
+refs.generateBtn.addEventListener("click", () => {
+  generatePattern();
+  if (state.image && isMobileLayout()) {
+    setMobileView("pattern");
+  }
+});
 refs.downloadBtn.addEventListener("click", downloadPatternOnly);
 refs.exportSheetBtn.addEventListener("click", exportInstructionSheet);
 refs.resetCropBtn.addEventListener("click", () => resetCrop());
@@ -2302,6 +2522,7 @@ refs.sourceCanvas.addEventListener("pointerleave", () => {
 });
 
 window.addEventListener("resize", () => {
+  renderMobileView();
   drawImagePreview();
   drawPatternPreview();
 });
@@ -2309,6 +2530,7 @@ window.addEventListener("resize", () => {
 clearCanvas(sourceCtx, refs.sourceCanvas);
 clearCanvas(patternCtx, refs.patternCanvas);
 loadPreferences();
+refreshPalettePresetUi();
 renderPalette();
 updatePaletteCounter();
 renderStats();
@@ -2316,3 +2538,4 @@ renderLegend();
 renderInstructions();
 updateAdjustmentLabels();
 refreshImageMeta();
+renderMobileView();

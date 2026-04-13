@@ -1,6 +1,6 @@
 # Fuse Bead Pattern Studio
 
-Fuse Bead Pattern Studio is a web app for turning uploaded images into buildable 2.6 mm mini fuse bead patterns.
+Fuse Bead Pattern Studio is a web app for turning uploaded images into buildable fuse bead patterns.
 
 It is designed for real bead inventory constraints:
 

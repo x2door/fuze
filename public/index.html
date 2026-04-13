@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-3" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-8" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -19,7 +19,7 @@
     <div class="shell">
       <header class="hero">
         <div class="hero-copy">
-          <span class="eyebrow">2.6 mm mini beads</span>
+          <span class="eyebrow">Image to bead pattern</span>
           <h1>Fuse Bead Pattern Studio</h1>
           <p>
             Upload any image and turn it into a bead-by-bead pattern mapped to the
@@ -32,155 +32,169 @@
             <span>available colors</span>
           </div>
           <div class="hero-stat">
-            <strong>2.6 mm</strong>
-            <span>bead diameter</span>
+            <strong>PNG</strong>
+            <span>pattern exports</span>
           </div>
         </div>
       </header>
 
       <main class="layout">
         <section class="panel controls-panel">
-          <div class="panel-heading">
-            <h2>Setup</h2>
-            <p>Choose an image, grid size, and the bead colors you want the app to use.</p>
-          </div>
-
-          <div class="control-group">
-            <label for="imageUpload">Image upload</label>
-            <input id="imageUpload" type="file" accept="image/*" />
-            <p class="helper">
-              Best results come from simple artwork, sprites, logos, or photos cropped tightly.
-            </p>
-          </div>
-
-          <div class="grid two">
-            <div class="control-group">
-              <label for="patternWidth">Pattern width (beads)</label>
-              <input id="patternWidth" type="number" min="8" max="220" value="64" />
+          <div class="mobile-view-panel" data-mobile-view-panel="setup">
+            <div class="panel-heading">
+              <h2>Setup</h2>
+              <p>Choose an image, grid size, and the bead colors you want the app to use.</p>
             </div>
+
             <div class="control-group">
-              <label for="patternHeight">Pattern height (beads)</label>
-              <input id="patternHeight" type="number" min="8" max="220" value="64" />
+              <label for="imageUpload">Image upload</label>
+              <input id="imageUpload" type="file" accept="image/*" />
+              <p class="helper">
+                Best results come from simple artwork, sprites, logos, or photos cropped tightly.
+              </p>
             </div>
-          </div>
 
-          <div class="grid two compact-row">
-            <label class="toggle">
-              <input id="lockAspect" type="checkbox" checked />
-              <span>Keep image aspect ratio</span>
-            </label>
-            <label class="toggle">
-              <input id="showSymbols" type="checkbox" checked />
-              <span>Show color codes on large cells</span>
-            </label>
-          </div>
+            <div class="grid two">
+              <div class="control-group">
+                <label for="patternWidth">Pattern width (beads)</label>
+                <input id="patternWidth" type="number" min="8" max="220" value="64" />
+              </div>
+              <div class="control-group">
+                <label for="patternHeight">Pattern height (beads)</label>
+                <input id="patternHeight" type="number" min="8" max="220" value="64" />
+              </div>
+            </div>
 
-          <div class="grid two compact-row">
-            <label class="toggle">
-              <input id="mirrorPattern" type="checkbox" />
-              <span>Mirror pattern horizontally</span>
-            </label>
-          </div>
+            <div class="grid two compact-row">
+              <label class="toggle">
+                <input id="lockAspect" type="checkbox" checked />
+                <span>Keep image aspect ratio</span>
+              </label>
+              <label class="toggle">
+                <input id="showSymbols" type="checkbox" checked />
+                <span>Show color codes on large cells</span>
+              </label>
+            </div>
 
-          <div class="grid two">
+            <div class="grid two compact-row">
+              <label class="toggle">
+                <input id="mirrorPattern" type="checkbox" />
+                <span>Mirror pattern horizontally</span>
+              </label>
+            </div>
+
+            <div class="grid two">
+              <div class="control-group">
+                <label for="backgroundMode">Transparent pixels</label>
+                <select id="backgroundMode">
+                  <option value="empty">Leave empty</option>
+                  <option value="see-through">Use See Through beads</option>
+                  <option value="white">Use White beads</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="ditherStrength">Color smoothing</label>
+                <select id="ditherStrength">
+                  <option value="0">Off</option>
+                  <option value="0.35">Soft</option>
+                  <option value="0.65" selected>Balanced</option>
+                  <option value="1">Strong</option>
+                </select>
+              </div>
+            </div>
+
             <div class="control-group">
-              <label for="backgroundMode">Transparent pixels</label>
-              <select id="backgroundMode">
-                <option value="empty">Leave empty</option>
-                <option value="see-through">Use See Through beads</option>
-                <option value="white">Use White beads</option>
+              <label for="matchingMode">Color matching mode</label>
+              <select id="matchingMode">
+                <option value="balanced" selected>Balanced</option>
+                <option value="preserve-hue">Preserve hue</option>
+                <option value="preserve-contrast">Preserve contrast</option>
+                <option value="vivid">Prefer vivid colors</option>
+                <option value="nearest-lab">Nearest color only</option>
               </select>
+              <p class="helper">
+                Try different matching modes when dark blues drift to black or pale colors drift to white.
+              </p>
             </div>
+
             <div class="control-group">
-              <label for="ditherStrength">Color smoothing</label>
-              <select id="ditherStrength">
-                <option value="0">Off</option>
-                <option value="0.35">Soft</option>
-                <option value="0.65" selected>Balanced</option>
-                <option value="1">Strong</option>
+              <label for="inventoryBalancing">Inventory balancing</label>
+              <select id="inventoryBalancing">
+                <option value="off" selected>Off</option>
+                <option value="soft">Soft balancing</option>
+                <option value="strong">Strong balancing</option>
               </select>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <label for="matchingMode">Color matching mode</label>
-            <select id="matchingMode">
-              <option value="balanced" selected>Balanced</option>
-              <option value="preserve-hue">Preserve hue</option>
-              <option value="preserve-contrast">Preserve contrast</option>
-              <option value="vivid">Prefer vivid colors</option>
-              <option value="nearest-lab">Nearest color only</option>
-            </select>
             <p class="helper">
-              Try different matching modes when dark blues drift to black or pale colors drift to white.
+              Uses your saved palette inventory values to conserve scarce bead colors and spread substitutes across the full pattern.
             </p>
-          </div>
-
-          <div class="control-group">
-            <label for="inventoryBalancing">Inventory balancing</label>
-            <select id="inventoryBalancing">
-              <option value="off" selected>Off</option>
-              <option value="soft">Soft balancing</option>
-              <option value="strong">Strong balancing</option>
-            </select>
-            <p class="helper">
-              Uses your saved palette inventory values to conserve scarce bead colors when similar colors are available.
-            </p>
-          </div>
-
-          <div class="grid two">
-            <div class="control-group">
-              <label for="hueShift">Hue shift <span id="hueShiftValue">0deg</span></label>
-              <input id="hueShift" type="range" min="-180" max="180" step="1" value="0" />
-              <p class="helper">Shift the image color wheel before bead matching.</p>
             </div>
-            <div class="control-group">
-              <label for="brightnessBoost">Brightness <span id="brightnessValue">100%</span></label>
-              <input id="brightnessBoost" type="range" min="50" max="180" step="1" value="100" />
-              <p class="helper">Brighten dark areas so they are less likely to map to black.</p>
+
+            <div class="grid two">
+              <div class="control-group">
+                <label for="hueShift">Hue shift <span id="hueShiftValue">0deg</span></label>
+                <input id="hueShift" type="range" min="-180" max="180" step="1" value="0" />
+                <p class="helper">Shift the image color wheel before bead matching.</p>
+              </div>
+              <div class="control-group">
+                <label for="brightnessBoost">Brightness <span id="brightnessValue">100%</span></label>
+                <input id="brightnessBoost" type="range" min="50" max="180" step="1" value="100" />
+                <p class="helper">Brighten dark areas so they are less likely to map to black.</p>
+              </div>
+            </div>
+
+            <div class="grid two">
+              <div class="control-group">
+                <label for="saturationBoost">Saturation <span id="saturationValue">100%</span></label>
+                <input id="saturationBoost" type="range" min="0" max="200" step="1" value="100" />
+                <p class="helper">Boost muted colors so dark blues and soft tones stay colorful.</p>
+              </div>
+            </div>
+
+            <div class="grid two">
+              <div class="control-group">
+                <label for="shadowLift">Shadow lift <span id="shadowLiftValue">0%</span></label>
+                <input id="shadowLift" type="range" min="0" max="100" step="1" value="0" />
+                <p class="helper">Open up dark regions without brightening the whole image as much.</p>
+              </div>
+              <div class="control-group">
+                <label for="highlightRecovery">Highlight recovery <span id="highlightRecoveryValue">0%</span></label>
+                <input id="highlightRecovery" type="range" min="0" max="100" step="1" value="0" />
+                <p class="helper">Pull back bright spots so whites don’t overpower nearby detail.</p>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button id="generateBtn" class="button button-primary" type="button">
+                Generate pattern
+              </button>
+              <button id="downloadBtn" class="button button-secondary" type="button">
+                Download pixelated PNG
+              </button>
+              <button id="exportSheetBtn" class="button button-secondary" type="button">
+                Export instruction sheet
+              </button>
             </div>
           </div>
 
-          <div class="grid two">
-            <div class="control-group">
-              <label for="saturationBoost">Saturation <span id="saturationValue">100%</span></label>
-              <input id="saturationBoost" type="range" min="0" max="200" step="1" value="100" />
-              <p class="helper">Boost muted colors so dark blues and soft tones stay colorful.</p>
-            </div>
-          </div>
-
-          <div class="grid two">
-            <div class="control-group">
-              <label for="shadowLift">Shadow lift <span id="shadowLiftValue">0%</span></label>
-              <input id="shadowLift" type="range" min="0" max="100" step="1" value="0" />
-              <p class="helper">Open up dark regions without brightening the whole image as much.</p>
-            </div>
-            <div class="control-group">
-              <label for="highlightRecovery">Highlight recovery <span id="highlightRecoveryValue">0%</span></label>
-              <input id="highlightRecovery" type="range" min="0" max="100" step="1" value="0" />
-              <p class="helper">Pull back bright spots so whites don’t overpower nearby detail.</p>
-            </div>
-          </div>
-
-          <div class="panel-actions">
-            <button id="generateBtn" class="button button-primary" type="button">
-              Generate pattern
-            </button>
-            <button id="downloadBtn" class="button button-secondary" type="button">
-              Download pixelated PNG
-            </button>
-            <button id="exportSheetBtn" class="button button-secondary" type="button">
-              Export instruction sheet
-            </button>
-          </div>
-
-          <section class="palette-section">
+          <section class="palette-section mobile-view-panel" data-mobile-view-panel="palette">
             <div class="panel-heading palette-heading">
               <div>
                 <h3>Available bead colors</h3>
                 <p>Turn colors on or off, add your own colors, and save inventory for each bead color.</p>
               </div>
               <button id="resetPaletteBtn" class="text-button" type="button">Use all</button>
+            </div>
+            <div class="control-group">
+              <label for="palettePreset">Set preset</label>
+              <select id="palettePreset">
+                <option value="artkal-48">Artkal-style 48 color chart</option>
+                <option value="perler-large-tray">Perler Mini Large Tray (16)</option>
+                <option value="perler-summer-tray">Perler Summer Mini Tray (16)</option>
+                <option value="perler-neutral-tray">Perler Mini Neutral Tray (8)</option>
+              </select>
+              <p id="palettePresetNote" class="helper">
+                Start from a common mini bead set, then add manual colors on top.
+              </p>
             </div>
             <div class="custom-color-card">
               <div class="grid two">
@@ -213,7 +227,7 @@
           </section>
         </section>
 
-        <section class="panel output-panel">
+        <section class="panel output-panel" data-mobile-view-panel="pattern">
           <div class="panel-heading">
             <h2>Pattern</h2>
             <p>Preview, bead counts, and row-by-row building instructions.</p>
@@ -229,7 +243,7 @@
               <strong>-</strong>
             </article>
             <article class="stat-card">
-              <span>Physical size</span>
+              <span>Rows</span>
               <strong>-</strong>
             </article>
             <article class="stat-card">
@@ -284,8 +298,20 @@
           </div>
         </section>
       </main>
+
+      <nav class="mobile-nav" aria-label="Mobile sections">
+        <button class="mobile-nav-button mobile-nav-button-active" data-mobile-view-trigger="setup" type="button">
+          Setup
+        </button>
+        <button class="mobile-nav-button" data-mobile-view-trigger="palette" type="button">
+          Palette
+        </button>
+        <button class="mobile-nav-button" data-mobile-view-trigger="pattern" type="button">
+          Pattern
+        </button>
+      </nav>
     </div>
 
-    <script src="/app.js?v=20260413-3" type="module"></script>
+    <script src="/app.js?v=20260413-8" type="module"></script>
   </body>
 </html>

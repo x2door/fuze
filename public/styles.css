@@ -71,6 +71,14 @@ label,
   padding: 28px;
 }
 
+.mobile-nav {
+  display: none;
+}
+
+.mobile-view-hidden {
+  display: none !important;
+}
+
 .hero,
 .panel {
   border: 1px solid var(--line);
@@ -652,6 +660,10 @@ canvas {
 }
 
 @media (max-width: 720px) {
+  body.mobile-nav-enabled {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
   .shell {
     padding: 16px;
   }
@@ -668,6 +680,38 @@ canvas {
 
   .panel-actions {
     flex-direction: column;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(18, 17, 20, 0.94);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
+    z-index: 50;
+  }
+
+  .mobile-nav-button {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .mobile-nav-button-active {
+    color: #171214;
+    border-color: transparent;
+    background: linear-gradient(135deg, #ffb062 0%, #ff8c42 100%);
   }
 
   .legend-item {

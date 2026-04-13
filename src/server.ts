@@ -11,7 +11,6 @@ app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     app: "fuse-bead-pattern-studio",
-    beadSizeMm: 2.6,
   });
 });
 
