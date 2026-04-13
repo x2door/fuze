@@ -1,43 +1,72 @@
 # Fuse Bead Pattern Studio
 
-This project is a web app for turning uploaded images into fuse bead patterns using a fixed mini-bead palette.
+Fuse Bead Pattern Studio is a web app for turning uploaded images into buildable 2.6 mm mini fuse bead patterns.
 
-Main features:
+It is designed for real bead inventory constraints:
 
-- Upload any image from your computer
-- Resize it into a bead grid in bead units
-- Map every pixel to the closest match from your available bead colors
-- Turn individual palette colors on or off if your kit is missing some shades
-- Show bead counts, physical size, and row-by-row build instructions
-- Export the generated pattern preview as a PNG
+- upload an image and convert it into a bead grid
+- crop the image with a fixed pattern ratio
+- mirror the pattern for bead layouts that need a reversed build
+- match source colors to your available bead palette
+- save your active colors, custom colors, and inventory in the browser
+- balance matching away from scarce colors when close alternatives exist
+- export a pixelated preview and an instruction sheet
 
-## Stack
+## Features
 
-- Backend: `Node.js + Express + TypeScript`
-- Frontend: static browser app (`public/index.html`, `public/app.js`, `public/styles.css`)
+- Adjustable bead grid size in bead units
+- Palette filtering and custom bead colors
+- Inventory-aware matching and shortage tracking
+- Multiple color matching modes
+- Image controls for hue, brightness, saturation, shadow lift, and highlight recovery
+- Crop, move, resize, and aspect-ratio locking
+- Row-by-row build instructions
+- Pattern and instruction-sheet PNG exports
 
-## Run locally
+## Tech Stack
+
+- `Node.js`
+- `Express`
+- `TypeScript`
+- Plain browser-side `HTML`, `CSS`, and `JavaScript`
+
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## API summary
+## Production Run
 
-- `GET /api/health`
+```bash
+npm run build
+npm start
+```
 
-## File map
+## Deployment
 
-- `/src/server.ts` static app host
+This app can be deployed as a simple Node web service.
+
+For Render, Railway, Fly.io, or a similar platform:
+
+- Build command: `npm run build`
+- Start command: `npm start`
+- Node version: `20+`
+
+The app serves the static frontend from `public/` and exposes a small health endpoint at `/api/health`.
+
+## Project Structure
+
 - `/public/index.html` app structure
-- `/public/app.js` image processing, palette matching, and pattern generation
-- `/public/styles.css` visual styling
+- `/public/app.js` image processing, palette logic, crop behavior, exports, and pattern generation
+- `/public/styles.css` UI styling
+- `/src/server.ts` Express server for local and deployed hosting
 
 ## Notes
 
-- The current color palette is based on the bead chart in the project brief and uses approximate hex values for matching.
-- For the best results, use tightly cropped artwork and simple images with strong contrast.
-- Large photo-based images work best after reducing the target bead dimensions so the pattern stays readable.
+- The built-in palette uses approximate hex values based on the provided bead chart.
+- Saved palette settings and inventory are stored in browser local storage.
+- Photos usually work best after cropping tightly and reducing the final bead dimensions.
