@@ -107,6 +107,7 @@ const state = {
   selectedPalettePresetId: "artkal-48",
   mobileView: "setup",
   mobileCropEditing: false,
+  adjustmentApplyTimer: null,
   image: null,
   imageName: "",
   imageWidth: 0,
@@ -439,7 +440,32 @@ const getSaturationMultiplier = () => (Number(refs.saturationBoost.value) || 100
 const getShadowLift = () => (Number(refs.shadowLift.value) || 0) / 100;
 const getHighlightRecovery = () => (Number(refs.highlightRecovery.value) || 0) / 100;
 
+const applyImageAdjustmentChanges = () => {
+  if (!state.image) {
+    return;
+  }
+
+  drawImagePreview();
+  generatePattern();
+};
+
+const scheduleImageAdjustmentApply = (delayMs = 180) => {
+  if (state.adjustmentApplyTimer) {
+    window.clearTimeout(state.adjustmentApplyTimer);
+  }
+
+  state.adjustmentApplyTimer = window.setTimeout(() => {
+    state.adjustmentApplyTimer = null;
+    applyImageAdjustmentChanges();
+  }, delayMs);
+};
+
 const resetAdjustments = () => {
+  if (state.adjustmentApplyTimer) {
+    window.clearTimeout(state.adjustmentApplyTimer);
+    state.adjustmentApplyTimer = null;
+  }
+
   refs.hueShift.value = "0";
   refs.brightnessBoost.value = "100";
   refs.saturationBoost.value = "100";
@@ -447,10 +473,7 @@ const resetAdjustments = () => {
   refs.highlightRecovery.value = "0";
   updateAdjustmentLabels();
 
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
+  applyImageAdjustmentChanges();
 };
 
 const applyImageAdjustments = (imageData) => {
@@ -2477,40 +2500,26 @@ refs.inventoryBalancing.addEventListener("change", () => {
     generatePattern();
   }
 });
-refs.hueShift.addEventListener("input", () => {
-  updateAdjustmentLabels();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
-});
-refs.brightnessBoost.addEventListener("input", () => {
-  updateAdjustmentLabels();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
-});
-refs.saturationBoost.addEventListener("input", () => {
-  updateAdjustmentLabels();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
-});
-refs.shadowLift.addEventListener("input", () => {
-  updateAdjustmentLabels();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
-});
-refs.highlightRecovery.addEventListener("input", () => {
-  updateAdjustmentLabels();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
+[
+  refs.hueShift,
+  refs.brightnessBoost,
+  refs.saturationBoost,
+  refs.shadowLift,
+  refs.highlightRecovery,
+].forEach((control) => {
+  control.addEventListener("input", () => {
+    updateAdjustmentLabels();
+    scheduleImageAdjustmentApply();
+  });
+
+  control.addEventListener("change", () => {
+    updateAdjustmentLabels();
+    if (state.adjustmentApplyTimer) {
+      window.clearTimeout(state.adjustmentApplyTimer);
+      state.adjustmentApplyTimer = null;
+    }
+    applyImageAdjustmentChanges();
+  });
 });
 refs.resetAdjustmentsBtn.addEventListener("click", resetAdjustments);
 refs.palettePreset.addEventListener("change", () => {
