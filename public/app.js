@@ -1,5 +1,5 @@
 const EDGE_SNAP_PX = 24;
-const NEAR_FULL_CROP_RATIO = 0.96;
+const NEAR_FULL_CROP_RATIO = 0.995;
 const CROP_HANDLE_SIZE = 12;
 const STORAGE_KEY = "fuse-bead-pattern-studio:v1";
 
@@ -398,7 +398,7 @@ const resizeCanvasToDisplaySize = (canvas) => {
 };
 
 const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
-  const { showCropOverlay = true } = options;
+  const { showCropOverlay = true, cropToCommittedView = false } = options;
 
   resizeCanvasToDisplaySize(canvas);
   clearCanvas(ctx, canvas);
@@ -407,7 +407,10 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
     return false;
   }
 
-  const fit = fitBox(state.imageWidth, state.imageHeight, canvas.width, canvas.height);
+  const previewCrop = cropToCommittedView ? getCommittedCropRect() : null;
+  const sourceWidth = previewCrop?.width || state.imageWidth;
+  const sourceHeight = previewCrop?.height || state.imageHeight;
+  const fit = fitBox(sourceWidth, sourceHeight, canvas.width, canvas.height);
   const offsetX = Math.floor((canvas.width - fit.width) / 2);
   const offsetY = Math.floor((canvas.height - fit.height) / 2);
 
@@ -421,10 +424,10 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
   }
 
   drawAdjustedImageRegion(ctx, {
-    sourceX: 0,
-    sourceY: 0,
-    sourceWidth: state.imageWidth,
-    sourceHeight: state.imageHeight,
+    sourceX: previewCrop?.x || 0,
+    sourceY: previewCrop?.y || 0,
+    sourceWidth,
+    sourceHeight,
     destinationX: offsetX,
     destinationY: offsetY,
     destinationWidth: fit.width,
@@ -1029,7 +1032,10 @@ const refreshImageMeta = () => {
 const drawImagePreview = () => {
   state.sourcePlacement = null;
 
-  drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, { showCropOverlay: state.cropToolOpen });
+  drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, {
+    showCropOverlay: state.cropToolOpen,
+    cropToCommittedView: !state.cropToolOpen,
+  });
 
   updateCropUi();
   drawMobileSetupPreview();
