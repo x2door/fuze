@@ -167,6 +167,13 @@ label,
   min-width: 280px;
 }
 
+.hero-side {
+  display: grid;
+  gap: 14px;
+  justify-items: end;
+  align-self: stretch;
+}
+
 .hero-stat {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -178,6 +185,7 @@ label,
   display: grid;
   gap: 8px;
   min-width: 160px;
+  justify-items: end;
 }
 
 .hero-theme-label {
