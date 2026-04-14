@@ -2653,11 +2653,21 @@ const handlePatternHeightChange = () => {
   applyPatternDimensionInputs("height");
 };
 
-refs.patternWidth.addEventListener("input", handlePatternWidthChange);
 refs.patternWidth.addEventListener("change", handlePatternWidthChange);
+refs.patternWidth.addEventListener("blur", handlePatternWidthChange);
+refs.patternWidth.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.currentTarget.blur();
+  }
+});
 
-refs.patternHeight.addEventListener("input", handlePatternHeightChange);
 refs.patternHeight.addEventListener("change", handlePatternHeightChange);
+refs.patternHeight.addEventListener("blur", handlePatternHeightChange);
+refs.patternHeight.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.currentTarget.blur();
+  }
+});
 
 refs.showSymbols.addEventListener("change", drawPatternPreview);
 refs.mirrorPattern.addEventListener("change", () => {

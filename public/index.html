@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-15" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-16" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -81,11 +81,27 @@
             <div class="grid two">
               <div class="control-group">
                 <label for="patternWidth">Pattern width (beads)</label>
-                <input id="patternWidth" type="number" min="8" max="220" value="64" />
+                <input
+                  id="patternWidth"
+                  type="number"
+                  min="8"
+                  max="220"
+                  value="64"
+                  inputmode="numeric"
+                  enterkeyhint="done"
+                />
               </div>
               <div class="control-group">
                 <label for="patternHeight">Pattern height (beads)</label>
-                <input id="patternHeight" type="number" min="8" max="220" value="64" />
+                <input
+                  id="patternHeight"
+                  type="number"
+                  min="8"
+                  max="220"
+                  value="64"
+                  inputmode="numeric"
+                  enterkeyhint="done"
+                />
               </div>
             </div>
 
@@ -362,6 +378,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260413-15" type="module"></script>
+    <script src="/app.js?v=20260413-16" type="module"></script>
   </body>
 </html>
