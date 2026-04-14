@@ -106,6 +106,7 @@ const PERLER_NEUTRAL_TRAY = [
 const state = {
   selectedPalettePresetId: "artkal-48",
   mobileView: "setup",
+  mobileSetupPreviewMode: "pattern",
   mobileCropEditing: false,
   adjustmentApplyTimer: null,
   image: null,
@@ -168,6 +169,10 @@ const refs = {
   statsGrid: document.getElementById("statsGrid"),
   sourceCanvas: document.getElementById("sourceCanvas"),
   patternCanvas: document.getElementById("patternCanvas"),
+  mobilePreviewCanvas: document.getElementById("mobilePreviewCanvas"),
+  mobilePreviewMeta: document.getElementById("mobilePreviewMeta"),
+  mobilePreviewPatternBtn: document.getElementById("mobilePreviewPatternBtn"),
+  mobilePreviewSourceBtn: document.getElementById("mobilePreviewSourceBtn"),
   imageMeta: document.getElementById("imageMeta"),
   patternMeta: document.getElementById("patternMeta"),
   legendMeta: document.getElementById("legendMeta"),
@@ -182,6 +187,7 @@ const refs = {
 
 const sourceCtx = refs.sourceCanvas.getContext("2d");
 const patternCtx = refs.patternCanvas.getContext("2d");
+const mobilePreviewCtx = refs.mobilePreviewCanvas.getContext("2d");
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const isMobileLayout = () => window.innerWidth <= 720;
@@ -377,6 +383,99 @@ const resizeCanvasToDisplaySize = (canvas) => {
     canvas.width = width;
     canvas.height = height;
   }
+};
+
+const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
+  const { showCropOverlay = true } = options;
+
+  resizeCanvasToDisplaySize(canvas);
+  clearCanvas(ctx, canvas);
+
+  if (!state.image) {
+    return false;
+  }
+
+  const fit = fitBox(state.imageWidth, state.imageHeight, canvas.width, canvas.height);
+  const offsetX = Math.floor((canvas.width - fit.width) / 2);
+  const offsetY = Math.floor((canvas.height - fit.height) / 2);
+
+  if (canvas === refs.sourceCanvas) {
+    state.sourcePlacement = {
+      offsetX,
+      offsetY,
+      drawWidth: fit.width,
+      drawHeight: fit.height,
+    };
+  }
+
+  drawAdjustedImageRegion(ctx, {
+    sourceX: 0,
+    sourceY: 0,
+    sourceWidth: state.imageWidth,
+    sourceHeight: state.imageHeight,
+    destinationX: offsetX,
+    destinationY: offsetY,
+    destinationWidth: fit.width,
+    destinationHeight: fit.height,
+  });
+
+  if (!showCropOverlay || !state.sourcePlacement) {
+    return true;
+  }
+
+  const cropRect = cropToCanvasRect(getActiveCropRect());
+  if (!cropRect) {
+    return true;
+  }
+
+  ctx.save();
+  ctx.fillStyle = "rgba(10, 10, 14, 0.55)";
+  ctx.fillRect(offsetX, offsetY, fit.width, cropRect.y - offsetY);
+  ctx.fillRect(offsetX, cropRect.y, cropRect.x - offsetX, cropRect.height);
+  ctx.fillRect(
+    cropRect.x + cropRect.width,
+    cropRect.y,
+    offsetX + fit.width - (cropRect.x + cropRect.width),
+    cropRect.height,
+  );
+  ctx.fillRect(
+    offsetX,
+    cropRect.y + cropRect.height,
+    fit.width,
+    offsetY + fit.height - (cropRect.y + cropRect.height),
+  );
+  ctx.strokeStyle = "#ffb062";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+  ctx.fillStyle = "rgba(255, 176, 98, 0.2)";
+  ctx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+  if (!isFullCropRect(getActiveCropRect())) {
+    const handleRadius = CROP_HANDLE_SIZE * Math.min(window.devicePixelRatio || 1, 2);
+    const handles = [
+      { x: cropRect.x, y: cropRect.y, glyph: "↖" },
+      { x: cropRect.x + cropRect.width, y: cropRect.y, glyph: "↗" },
+      { x: cropRect.x, y: cropRect.y + cropRect.height, glyph: "↙" },
+      { x: cropRect.x + cropRect.width, y: cropRect.y + cropRect.height, glyph: "↘" },
+    ];
+
+    handles.forEach((handle) => {
+      ctx.fillStyle = "#171a21";
+      ctx.strokeStyle = "#ffb062";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(handle.x, handle.y, handleRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#ffcfac";
+      ctx.font = `700 ${Math.max(12, handleRadius)}px "IBM Plex Sans", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(handle.glyph, handle.x, handle.y + 1);
+    });
+  }
+  ctx.restore();
+  return true;
 };
 
 const rgbToHsl = ({ r, g, b }) => {
@@ -903,90 +1002,12 @@ const refreshImageMeta = () => {
 };
 
 const drawImagePreview = () => {
-  resizeCanvasToDisplaySize(refs.sourceCanvas);
-  clearCanvas(sourceCtx, refs.sourceCanvas);
   state.sourcePlacement = null;
 
-  if (!state.image) {
-    refreshImageMeta();
-    return;
-  }
-
-  const canvas = refs.sourceCanvas;
-  const fit = fitBox(state.imageWidth, state.imageHeight, canvas.width, canvas.height);
-  const offsetX = Math.floor((canvas.width - fit.width) / 2);
-  const offsetY = Math.floor((canvas.height - fit.height) / 2);
-
-  state.sourcePlacement = {
-    offsetX,
-    offsetY,
-    drawWidth: fit.width,
-    drawHeight: fit.height,
-  };
-
-  drawAdjustedImageRegion(sourceCtx, {
-    sourceX: 0,
-    sourceY: 0,
-    sourceWidth: state.imageWidth,
-    sourceHeight: state.imageHeight,
-    destinationX: offsetX,
-    destinationY: offsetY,
-    destinationWidth: fit.width,
-    destinationHeight: fit.height,
-  });
-
-  const cropRect = cropToCanvasRect(getActiveCropRect());
-  if (cropRect) {
-    sourceCtx.save();
-    sourceCtx.fillStyle = "rgba(10, 10, 14, 0.55)";
-    sourceCtx.fillRect(offsetX, offsetY, fit.width, cropRect.y - offsetY);
-    sourceCtx.fillRect(offsetX, cropRect.y, cropRect.x - offsetX, cropRect.height);
-    sourceCtx.fillRect(
-      cropRect.x + cropRect.width,
-      cropRect.y,
-      offsetX + fit.width - (cropRect.x + cropRect.width),
-      cropRect.height,
-    );
-    sourceCtx.fillRect(
-      offsetX,
-      cropRect.y + cropRect.height,
-      fit.width,
-      offsetY + fit.height - (cropRect.y + cropRect.height),
-    );
-    sourceCtx.strokeStyle = "#ffb062";
-    sourceCtx.lineWidth = 2;
-    sourceCtx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
-    sourceCtx.fillStyle = "rgba(255, 176, 98, 0.2)";
-    sourceCtx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
-
-    if (!isFullCropRect(getActiveCropRect())) {
-      const handleRadius = CROP_HANDLE_SIZE * Math.min(window.devicePixelRatio || 1, 2);
-      const handles = [
-        { x: cropRect.x, y: cropRect.y, glyph: "↖" },
-        { x: cropRect.x + cropRect.width, y: cropRect.y, glyph: "↗" },
-        { x: cropRect.x, y: cropRect.y + cropRect.height, glyph: "↙" },
-        { x: cropRect.x + cropRect.width, y: cropRect.y + cropRect.height, glyph: "↘" },
-      ];
-
-      handles.forEach((handle) => {
-        sourceCtx.fillStyle = "#171a21";
-        sourceCtx.strokeStyle = "#ffb062";
-        sourceCtx.lineWidth = 2;
-        sourceCtx.beginPath();
-        sourceCtx.arc(handle.x, handle.y, handleRadius, 0, Math.PI * 2);
-        sourceCtx.fill();
-        sourceCtx.stroke();
-        sourceCtx.fillStyle = "#ffcfac";
-        sourceCtx.font = `700 ${Math.max(12, handleRadius)}px "IBM Plex Sans", sans-serif`;
-        sourceCtx.textAlign = "center";
-        sourceCtx.textBaseline = "middle";
-        sourceCtx.fillText(handle.glyph, handle.x, handle.y + 1);
-      });
-    }
-    sourceCtx.restore();
-  }
+  drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, { showCropOverlay: true });
 
   updateCropUi();
+  drawMobileSetupPreview();
 };
 
 const setStats = (items) => {
@@ -1840,6 +1861,62 @@ const drawPatternPreview = () => {
     showSymbols,
     drawGrid: true,
   });
+  drawMobileSetupPreview();
+};
+
+const renderMobilePreviewModeUi = () => {
+  const showPattern = state.mobileSetupPreviewMode === "pattern";
+  refs.mobilePreviewPatternBtn.classList.toggle(
+    "mobile-preview-toggle-button-active",
+    showPattern,
+  );
+  refs.mobilePreviewSourceBtn.classList.toggle(
+    "mobile-preview-toggle-button-active",
+    !showPattern,
+  );
+  refs.mobilePreviewPatternBtn.setAttribute("aria-pressed", String(showPattern));
+  refs.mobilePreviewSourceBtn.setAttribute("aria-pressed", String(!showPattern));
+};
+
+const drawMobileSetupPreview = () => {
+  renderMobilePreviewModeUi();
+  resizeCanvasToDisplaySize(refs.mobilePreviewCanvas);
+  clearCanvas(mobilePreviewCtx, refs.mobilePreviewCanvas);
+
+  if (!state.image) {
+    refs.mobilePreviewMeta.textContent = "Upload an image to preview changes";
+    return;
+  }
+
+  if (state.mobileSetupPreviewMode === "source" || !state.pattern) {
+    refs.mobilePreviewMeta.textContent = "Corrected source preview";
+    drawSourcePreviewInto(mobilePreviewCtx, refs.mobilePreviewCanvas, {
+      showCropOverlay: false,
+    });
+    return;
+  }
+
+  const availableWidth = refs.mobilePreviewCanvas.width - 20;
+  const availableHeight = refs.mobilePreviewCanvas.height - 20;
+  const cellSize = Math.max(
+    1,
+    Math.floor(Math.min(availableWidth / state.pattern.width, availableHeight / state.pattern.height)),
+  );
+  const patternWidthPx = state.pattern.width * cellSize;
+  const patternHeightPx = state.pattern.height * cellSize;
+  const left = Math.floor((refs.mobilePreviewCanvas.width - patternWidthPx) / 2);
+  const top = Math.floor((refs.mobilePreviewCanvas.height - patternHeightPx) / 2);
+
+  refs.mobilePreviewMeta.textContent = `${state.pattern.width} x ${state.pattern.height} live pattern`;
+  mobilePreviewCtx.fillStyle = "#16181f";
+  mobilePreviewCtx.fillRect(0, 0, refs.mobilePreviewCanvas.width, refs.mobilePreviewCanvas.height);
+  drawPatternGrid(mobilePreviewCtx, state.pattern, {
+    left,
+    top,
+    cellSize,
+    showSymbols: refs.showSymbols.checked && cellSize >= 14,
+    drawGrid: true,
+  });
 };
 
 const renderLegend = () => {
@@ -2525,6 +2602,14 @@ refs.resetAdjustmentsBtn.addEventListener("click", resetAdjustments);
 refs.palettePreset.addEventListener("change", () => {
   applyPalettePreset(refs.palettePreset.value);
 });
+refs.mobilePreviewPatternBtn.addEventListener("click", () => {
+  state.mobileSetupPreviewMode = "pattern";
+  drawMobileSetupPreview();
+});
+refs.mobilePreviewSourceBtn.addEventListener("click", () => {
+  state.mobileSetupPreviewMode = "source";
+  drawMobileSetupPreview();
+});
 refs.mobileViewButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const nextView = button.dataset.mobileViewTrigger;
@@ -2606,6 +2691,7 @@ window.addEventListener("resize", () => {
   renderMobileView();
   drawImagePreview();
   drawPatternPreview();
+  drawMobileSetupPreview();
 });
 
 clearCanvas(sourceCtx, refs.sourceCanvas);
@@ -2621,3 +2707,4 @@ updateAdjustmentLabels();
 refreshImageMeta();
 renderMobileView();
 updateCropUi();
+drawMobileSetupPreview();

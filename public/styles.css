@@ -79,6 +79,10 @@ label,
   display: none !important;
 }
 
+.mobile-live-preview-card {
+  display: none;
+}
+
 .hero,
 .panel {
   border: 1px solid var(--line);
@@ -506,6 +510,32 @@ canvas {
   margin-top: 12px;
 }
 
+.mobile-live-preview-head {
+  margin-bottom: 10px;
+}
+
+.mobile-preview-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mobile-preview-toggle-button {
+  flex: 1 1 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.mobile-preview-toggle-button-active {
+  color: #171214;
+  border-color: transparent;
+  background: linear-gradient(135deg, #ffb062 0%, #ff8c42 100%);
+}
+
 .canvas-tools {
   display: flex;
   justify-content: space-between;
@@ -701,6 +731,19 @@ canvas {
 
   .panel-actions {
     flex-direction: column;
+  }
+
+  .mobile-live-preview-card {
+    position: sticky;
+    top: 12px;
+    z-index: 4;
+    display: block;
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(18, 19, 24, 0.96);
+    backdrop-filter: blur(12px);
   }
 
   .canvas-tools .preview-actions {

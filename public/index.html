@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-11" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-12" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -53,6 +53,30 @@
                 Best results come from simple artwork, sprites, logos, or photos cropped tightly.
               </p>
             </div>
+
+            <article class="mobile-live-preview-card">
+              <div class="preview-head mobile-live-preview-head">
+                <h3>Live preview</h3>
+                <span id="mobilePreviewMeta">Upload an image to preview changes</span>
+              </div>
+              <div class="mobile-preview-toggle" role="tablist" aria-label="Live preview mode">
+                <button
+                  id="mobilePreviewPatternBtn"
+                  class="mobile-preview-toggle-button mobile-preview-toggle-button-active"
+                  type="button"
+                >
+                  Pattern
+                </button>
+                <button
+                  id="mobilePreviewSourceBtn"
+                  class="mobile-preview-toggle-button"
+                  type="button"
+                >
+                  Source
+                </button>
+              </div>
+              <canvas id="mobilePreviewCanvas" width="320" height="320"></canvas>
+            </article>
 
             <div class="grid two">
               <div class="control-group">
@@ -330,6 +354,6 @@
       </nav>
     </div>
 
-    <script src="/app.js?v=20260413-11" type="module"></script>
+    <script src="/app.js?v=20260413-12" type="module"></script>
   </body>
 </html>
