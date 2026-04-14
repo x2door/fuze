@@ -159,12 +159,14 @@ const state = {
   backgroundSampleHex: null,
   backgroundTolerance: 24,
   desktopSetupCollapsed: false,
+  themeMode: "dark",
   adjustmentApplyTimer: null,
   image: null,
   imageName: "",
   imageWidth: 0,
   imageHeight: 0,
   cropRect: null,
+  cropRectBeforeEdit: null,
   cropDraftRect: null,
   cropStartPoint: null,
   cropMoveOrigin: null,
@@ -181,6 +183,7 @@ const state = {
 
 const refs = {
   imageUpload: document.getElementById("imageUpload"),
+  themeMode: document.getElementById("themeMode"),
   patternWidth: document.getElementById("patternWidth"),
   patternHeight: document.getElementById("patternHeight"),
   lockAspect: document.getElementById("lockAspect"),
@@ -405,6 +408,19 @@ const renderDesktopLayout = () => {
   refs.toggleSetupBtn.textContent = collapsed ? "Show setup" : "Hide setup";
 };
 
+const getThemeValue = (variableName, fallback) => {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+  return value || fallback;
+};
+
+const renderTheme = () => {
+  document.documentElement.dataset.theme = state.themeMode;
+  refs.themeMode.value = state.themeMode;
+  drawImagePreview();
+  drawPatternPreview();
+  drawMobileSetupPreview();
+};
+
 const deltaE2000 = (left, right) => {
   const kL = 1;
   const kC = 1;
@@ -481,7 +497,7 @@ const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
 
 const clearCanvas = (ctx, canvas) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#151821";
+  ctx.fillStyle = getThemeValue("--canvas-fill", "#151821");
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 };
 
@@ -1411,6 +1427,7 @@ const savePreferences = () => {
       backgroundRemovalEnabled: state.backgroundRemovalEnabled,
       backgroundTolerance: state.backgroundTolerance,
       desktopSetupCollapsed: state.desktopSetupCollapsed,
+      themeMode: state.themeMode,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -1494,10 +1511,14 @@ const loadPreferences = () => {
     refs.backgroundTolerance.value = String(state.backgroundTolerance);
     refs.removePickedBackground.checked = state.backgroundRemovalEnabled;
     state.desktopSetupCollapsed = Boolean(saved.desktopSetupCollapsed);
+    if (saved.themeMode === "light" || saved.themeMode === "dark") {
+      state.themeMode = saved.themeMode;
+    }
 
     refreshPalettePresetUi();
     renderBackgroundUi();
     renderDesktopLayout();
+    renderTheme();
   } catch (error) {
     console.warn("Unable to load saved palette preferences.", error);
   }
@@ -2083,8 +2104,9 @@ const drawPatternGrid = (ctx, pattern, options) => {
     cellSize,
     showSymbols = false,
     drawGrid = true,
-    emptyColor = "#101116",
+    emptyColor = null,
   } = options;
+  const resolvedEmptyColor = emptyColor || getThemeValue("--empty-cell-color", "#101116");
 
   for (let y = 0; y < pattern.height; y += 1) {
     for (let x = 0; x < pattern.width; x += 1) {
@@ -2092,7 +2114,7 @@ const drawPatternGrid = (ctx, pattern, options) => {
       const cellLeft = left + x * cellSize;
       const cellTop = top + y * cellSize;
 
-      ctx.fillStyle = cell ? cell.hex : emptyColor;
+      ctx.fillStyle = cell ? cell.hex : resolvedEmptyColor;
       ctx.fillRect(cellLeft, cellTop, cellSize, cellSize);
 
       if (drawGrid) {
@@ -2131,7 +2153,7 @@ const drawPatternPreview = () => {
   const top = Math.floor((refs.patternCanvas.height - patternHeightPx) / 2);
   const showSymbols = refs.showSymbols.checked && cellSize >= 18;
 
-  patternCtx.fillStyle = "#16181f";
+  patternCtx.fillStyle = getThemeValue("--canvas-fill", "#16181f");
   patternCtx.fillRect(0, 0, refs.patternCanvas.width, refs.patternCanvas.height);
   drawPatternGrid(patternCtx, state.pattern, {
     left,
@@ -2187,7 +2209,7 @@ const drawMobileSetupPreview = () => {
   const top = Math.floor((refs.mobilePreviewCanvas.height - patternHeightPx) / 2);
 
   refs.mobilePreviewMeta.textContent = `${state.pattern.width} x ${state.pattern.height} live pattern`;
-  mobilePreviewCtx.fillStyle = "#16181f";
+  mobilePreviewCtx.fillStyle = getThemeValue("--canvas-fill", "#16181f");
   mobilePreviewCtx.fillRect(0, 0, refs.mobilePreviewCanvas.width, refs.mobilePreviewCanvas.height);
   drawPatternGrid(mobilePreviewCtx, state.pattern, {
     left,
@@ -2353,7 +2375,9 @@ const resetCrop = (regenerate = true) => {
   }
 
   if (state.cropToolOpen) {
-    state.cropDraftRect = createFullCropRect();
+    const fullCrop = createFullCropRect();
+    state.cropDraftRect = fullCrop;
+    state.cropRect = { ...fullCrop };
   } else {
     state.cropRect = createFullCropRect();
     state.cropDraftRect = null;
@@ -2391,6 +2415,7 @@ const finishCrop = () => {
       width: Math.round(state.cropDraftRect.width),
       height: Math.round(state.cropDraftRect.height),
     };
+    state.cropRect = { ...state.cropDraftRect };
     state.cropStartPoint = null;
     state.cropMoveOrigin = null;
     state.cropPointerOffset = null;
@@ -2422,6 +2447,7 @@ const finishCrop = () => {
     width: Math.round(snappedCropRect.width),
     height: Math.round(snappedCropRect.height),
   };
+  state.cropRect = { ...state.cropDraftRect };
   state.cropStartPoint = null;
   state.cropMoveOrigin = null;
   state.cropPointerOffset = null;
@@ -2452,6 +2478,7 @@ const openCropTool = () => {
   renderBackgroundUi();
   state.cropToolOpen = true;
   const currentCrop = getCommittedCropRect();
+  state.cropRectBeforeEdit = currentCrop ? { ...currentCrop } : createFullCropRect();
   state.cropDraftRect = currentCrop ? { ...currentCrop } : createFullCropRect();
   updateCropUi();
   queueAfterLayout(() => {
@@ -2462,7 +2489,11 @@ const openCropTool = () => {
 
 const cancelCropTool = () => {
   clearCropInteractionState();
+  if (state.cropRectBeforeEdit) {
+    state.cropRect = { ...state.cropRectBeforeEdit };
+  }
   state.cropToolOpen = false;
+  state.cropRectBeforeEdit = null;
   state.cropDraftRect = null;
   updateCropUi();
   queueAfterLayout(() => {
@@ -2486,6 +2517,7 @@ const saveCropTool = () => {
   };
   clearCropInteractionState();
   state.cropToolOpen = false;
+  state.cropRectBeforeEdit = null;
   state.cropDraftRect = null;
 
   if (refs.lockAspect.checked) {
@@ -2917,6 +2949,12 @@ refs.imageUpload.addEventListener("change", (event) => {
   }
 });
 
+refs.themeMode.addEventListener("change", () => {
+  state.themeMode = refs.themeMode.value === "light" ? "light" : "dark";
+  savePreferences();
+  renderTheme();
+});
+
 const handlePatternWidthChange = () => {
   applyPatternDimensionInputs("width");
 };
@@ -3161,5 +3199,6 @@ updateAdjustmentLabels();
 refreshImageMeta();
 renderMobileView();
 renderDesktopLayout();
+renderTheme();
 updateCropUi();
 drawMobileSetupPreview();
