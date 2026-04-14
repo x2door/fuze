@@ -107,7 +107,7 @@ const state = {
   selectedPalettePresetId: "artkal-48",
   mobileView: "setup",
   mobileSetupPreviewMode: "pattern",
-  mobileCropEditing: false,
+  cropToolOpen: false,
   adjustmentApplyTimer: null,
   image: null,
   imageName: "",
@@ -155,9 +155,13 @@ const refs = {
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
-  cropModeBtn: document.getElementById("cropModeBtn"),
+  sourcePreviewCard: document.getElementById("sourcePreviewCard"),
+  openCropToolBtn: document.getElementById("openCropToolBtn"),
+  saveCropBtn: document.getElementById("saveCropBtn"),
+  cancelCropBtn: document.getElementById("cancelCropBtn"),
   resetCropBtn: document.getElementById("resetCropBtn"),
   cropMeta: document.getElementById("cropMeta"),
+  cropToolBackdrop: document.getElementById("cropToolBackdrop"),
   customColorCode: document.getElementById("customColorCode"),
   customColorName: document.getElementById("customColorName"),
   customColorHex: document.getElementById("customColorHex"),
@@ -191,7 +195,7 @@ const mobilePreviewCtx = refs.mobilePreviewCanvas.getContext("2d");
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const isMobileLayout = () => window.innerWidth <= 720;
-const isCropEditingEnabled = () => !isMobileLayout() || state.mobileCropEditing;
+const isCropEditingEnabled = () => state.cropToolOpen;
 
 const hexToRgb = (hex) => {
   const normalized = hex.replace("#", "");
@@ -423,7 +427,7 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
     return true;
   }
 
-  const cropRect = cropToCanvasRect(getActiveCropRect());
+  const cropRect = cropToCanvasRect(getEditableCropRect());
   if (!cropRect) {
     return true;
   }
@@ -444,13 +448,16 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
     fit.width,
     offsetY + fit.height - (cropRect.y + cropRect.height),
   );
+  const isFullCrop = isFullCropRect(getEditableCropRect());
   ctx.strokeStyle = "#ffb062";
   ctx.lineWidth = 2;
   ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
-  ctx.fillStyle = "rgba(255, 176, 98, 0.2)";
-  ctx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+  if (!isFullCrop) {
+    ctx.fillStyle = "rgba(255, 176, 98, 0.2)";
+    ctx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+  }
 
-  if (!isFullCropRect(getActiveCropRect())) {
+  if (!isFullCrop) {
     const handleRadius = CROP_HANDLE_SIZE * Math.min(window.devicePixelRatio || 1, 2);
     const handles = [
       { x: cropRect.x, y: cropRect.y, glyph: "↖" },
@@ -706,7 +713,15 @@ const createFullCropRect = () => ({
   height: state.imageHeight,
 });
 
-const getActiveCropRect = () => {
+const getCommittedCropRect = () => {
+  if (!state.image) {
+    return null;
+  }
+
+  return state.cropRect || createFullCropRect();
+};
+
+const getEditableCropRect = () => {
   if (!state.image) {
     return null;
   }
@@ -715,7 +730,7 @@ const getActiveCropRect = () => {
 };
 
 const getCropSourceDimensions = () => {
-  const crop = getActiveCropRect();
+  const crop = getCommittedCropRect();
   return crop
     ? { width: crop.width, height: crop.height }
     : { width: state.imageWidth, height: state.imageHeight };
@@ -855,7 +870,7 @@ const updateCropCursor = (canvasPoint) => {
     return;
   }
 
-  const currentCrop = state.cropRect || createFullCropRect();
+  const currentCrop = getEditableCropRect() || createFullCropRect();
   const imagePoint = canvasPointToImagePoint(canvasPoint);
   const handle = !isFullCropRect(currentCrop)
     ? getCropHandleAtCanvasPoint(canvasPoint, currentCrop)
@@ -990,7 +1005,7 @@ const refreshImageMeta = () => {
     return;
   }
 
-  const crop = getActiveCropRect();
+  const crop = state.cropToolOpen ? getEditableCropRect() : getCommittedCropRect();
   const cropLabel = isFullCropRect(crop)
     ? "full image"
     : `${crop.width} x ${crop.height}px crop`;
@@ -998,13 +1013,15 @@ const refreshImageMeta = () => {
   const ratioHeight = clamp(Number(refs.patternHeight.value) || 64, 1, 220);
 
   refs.imageMeta.textContent = `${state.imageName} - ${state.imageWidth} x ${state.imageHeight}px`;
-  refs.cropMeta.textContent = `Crop area: ${cropLabel}. Drag inside to move, drag the corner arrows to resize, or drag outside to create a new ${ratioWidth}:${ratioHeight} crop.`;
+  refs.cropMeta.textContent = state.cropToolOpen
+    ? `Crop area: ${cropLabel}. Drag inside to move, drag the corner arrows to resize, or drag outside to create a new ${ratioWidth}:${ratioHeight} crop.`
+    : `Current crop: ${cropLabel}. Open Crop image to adjust the visible area.`;
 };
 
 const drawImagePreview = () => {
   state.sourcePlacement = null;
 
-  drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, { showCropOverlay: true });
+  drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, { showCropOverlay: state.cropToolOpen });
 
   updateCropUi();
   drawMobileSetupPreview();
@@ -1064,25 +1081,28 @@ const renderMobileView = () => {
 
 const updateCropUi = () => {
   const editing = isCropEditingEnabled();
+  document.body.classList.toggle("crop-tool-open", editing);
+  refs.sourcePreviewCard.classList.toggle("crop-tool-open", editing);
+  refs.cropToolBackdrop.hidden = !editing;
   refs.sourceCanvas.classList.toggle("crop-editing-active", editing);
   refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
-
-  if (refs.cropModeBtn) {
-    refs.cropModeBtn.hidden = !isMobileLayout();
-    refs.cropModeBtn.textContent = editing ? "Lock crop" : "Unlock crop";
-    refs.cropModeBtn.classList.toggle("crop-mode-active", editing);
-    refs.cropModeBtn.setAttribute("aria-pressed", String(editing));
-  }
+  refs.openCropToolBtn.hidden = editing;
+  refs.saveCropBtn.hidden = !editing;
+  refs.cancelCropBtn.hidden = !editing;
+  refs.resetCropBtn.textContent = editing ? "Reset to full image" : "Reset crop";
 
   if (!state.image) {
     refs.cropMeta.textContent = "Upload an image to adjust the crop.";
+    refs.openCropToolBtn.disabled = true;
+    refs.saveCropBtn.disabled = true;
+    refs.cancelCropBtn.disabled = true;
+    refs.resetCropBtn.disabled = true;
     return;
   }
-
-  if (isMobileLayout() && !state.mobileCropEditing) {
-    refs.cropMeta.textContent = "Crop is locked. Tap Unlock crop to edit. Scrolling is safe while it stays locked.";
-    return;
-  }
+  refs.openCropToolBtn.disabled = false;
+  refs.saveCropBtn.disabled = false;
+  refs.cancelCropBtn.disabled = false;
+  refs.resetCropBtn.disabled = false;
 
   refreshImageMeta();
 };
@@ -1527,7 +1547,7 @@ const addCustomColor = () => {
 const buildWorkingImageData = (width, height) => {
   const workingCanvas = document.createElement("canvas");
   const workingCtx = workingCanvas.getContext("2d", { willReadFrequently: true });
-  const cropRect = getActiveCropRect();
+  const cropRect = getCommittedCropRect();
   const shouldMirror = refs.mirrorPattern.checked;
 
   workingCanvas.width = width;
@@ -1792,7 +1812,7 @@ const makePattern = () => {
     height,
     cells,
     counts,
-    cropRect: getActiveCropRect(),
+    cropRect: getCommittedCropRect(),
     mirrored: refs.mirrorPattern.checked,
   };
 };
@@ -2073,8 +2093,12 @@ const resetCrop = (regenerate = true) => {
     return;
   }
 
-  state.cropRect = createFullCropRect();
-  state.cropDraftRect = null;
+  if (state.cropToolOpen) {
+    state.cropDraftRect = createFullCropRect();
+  } else {
+    state.cropRect = createFullCropRect();
+    state.cropDraftRect = null;
+  }
   state.cropStartPoint = null;
   state.cropMoveOrigin = null;
   state.cropPointerOffset = null;
@@ -2082,11 +2106,11 @@ const resetCrop = (regenerate = true) => {
   state.cropResizeAnchor = null;
   drawImagePreview();
 
-  if (refs.lockAspect.checked) {
+  if (!state.cropToolOpen && refs.lockAspect.checked) {
     syncAspectFromWidth();
   }
 
-  if (regenerate) {
+  if (!state.cropToolOpen && regenerate) {
     generatePattern();
   }
 };
@@ -2102,7 +2126,7 @@ const finishCrop = () => {
   }
 
   if (state.cropMoveOrigin && state.cropDraftRect) {
-    state.cropRect = {
+    state.cropDraftRect = {
       x: Math.round(state.cropDraftRect.x),
       y: Math.round(state.cropDraftRect.y),
       width: Math.round(state.cropDraftRect.width),
@@ -2115,7 +2139,6 @@ const finishCrop = () => {
     state.cropResizeHandle = null;
     state.cropResizeAnchor = null;
     drawImagePreview();
-    generatePattern();
     return;
   }
 
@@ -2126,7 +2149,6 @@ const finishCrop = () => {
   const snappedCropRect = snapCropRectToEdges(state.cropDraftRect);
 
   if (!snappedCropRect || snappedCropRect.width < 4 || snappedCropRect.height < 4) {
-    state.cropDraftRect = null;
     state.cropStartPoint = null;
     state.cropMoveOrigin = null;
     state.cropPointerOffset = null;
@@ -2136,24 +2158,83 @@ const finishCrop = () => {
     return;
   }
 
-  state.cropRect = {
+  state.cropDraftRect = {
     x: Math.round(snappedCropRect.x),
     y: Math.round(snappedCropRect.y),
     width: Math.round(snappedCropRect.width),
     height: Math.round(snappedCropRect.height),
   };
-  state.cropDraftRect = null;
   state.cropStartPoint = null;
   state.cropMoveOrigin = null;
   state.cropPointerOffset = null;
   state.cropResizeHandle = null;
   state.cropResizeAnchor = null;
   drawImagePreview();
+};
+
+const clearCropInteractionState = () => {
+  if (state.activePointerId !== null && refs.sourceCanvas.hasPointerCapture?.(state.activePointerId)) {
+    refs.sourceCanvas.releasePointerCapture(state.activePointerId);
+  }
+  state.activePointerId = null;
+  state.cropStartPoint = null;
+  state.cropMoveOrigin = null;
+  state.cropPointerOffset = null;
+  state.cropResizeHandle = null;
+  state.cropResizeAnchor = null;
+};
+
+const openCropTool = () => {
+  if (!state.image) {
+    return;
+  }
+
+  clearCropInteractionState();
+  state.cropToolOpen = true;
+  const currentCrop = getCommittedCropRect();
+  state.cropDraftRect = currentCrop ? { ...currentCrop } : createFullCropRect();
+  updateCropUi();
+  requestAnimationFrame(() => {
+    drawImagePreview();
+  });
+};
+
+const cancelCropTool = () => {
+  clearCropInteractionState();
+  state.cropToolOpen = false;
+  state.cropDraftRect = null;
+  updateCropUi();
+  requestAnimationFrame(() => {
+    drawImagePreview();
+  });
+};
+
+const saveCropTool = () => {
+  if (!state.image) {
+    return;
+  }
+
+  const draftCrop = state.cropDraftRect || getCommittedCropRect();
+  const nextCrop = snapCropRectToEdges(draftCrop) || createFullCropRect();
+
+  state.cropRect = {
+    x: Math.round(nextCrop.x),
+    y: Math.round(nextCrop.y),
+    width: Math.round(nextCrop.width),
+    height: Math.round(nextCrop.height),
+  };
+  clearCropInteractionState();
+  state.cropToolOpen = false;
+  state.cropDraftRect = null;
 
   if (refs.lockAspect.checked) {
     syncAspectFromWidth();
   }
 
+  updateCropUi();
+  requestAnimationFrame(() => {
+    drawImagePreview();
+  });
   generatePattern();
 };
 
@@ -2169,7 +2250,7 @@ const startCrop = (event) => {
     return;
   }
 
-  const currentCrop = state.cropRect || createFullCropRect();
+  const currentCrop = getEditableCropRect() || createFullCropRect();
   const resizeHandle = !isFullCropRect(currentCrop)
     ? getCropHandleAtCanvasPoint(canvasPoint, currentCrop)
     : null;
@@ -2260,7 +2341,7 @@ const loadImageFile = (file) => {
     const image = new Image();
 
     image.onload = () => {
-      state.mobileCropEditing = false;
+      state.cropToolOpen = false;
       state.image = image;
       state.imageName = file.name;
       state.imageWidth = image.width;
@@ -2357,7 +2438,7 @@ const exportInstructionSheet = () => {
   }
 
   const safeName = (state.imageName || "pattern").replace(/\.[^/.]+$/, "");
-  const cropRect = getActiveCropRect();
+  const cropRect = getCommittedCropRect();
   const usedColors = getUsedColors(state.pattern);
   const instructionRows = getInstructionRows(state.pattern);
 
@@ -2536,19 +2617,27 @@ refs.imageUpload.addEventListener("change", (event) => {
   }
 });
 
-refs.patternWidth.addEventListener("input", () => {
+const handlePatternWidthChange = () => {
   syncAspectFromWidth();
   if (state.image) {
     drawImagePreview();
+    generatePattern();
   }
-});
+};
 
-refs.patternHeight.addEventListener("input", () => {
+const handlePatternHeightChange = () => {
   syncAspectFromHeight();
   if (state.image) {
     drawImagePreview();
+    generatePattern();
   }
-});
+};
+
+refs.patternWidth.addEventListener("input", handlePatternWidthChange);
+refs.patternWidth.addEventListener("change", handlePatternWidthChange);
+
+refs.patternHeight.addEventListener("input", handlePatternHeightChange);
+refs.patternHeight.addEventListener("change", handlePatternHeightChange);
 
 refs.showSymbols.addEventListener("change", drawPatternPreview);
 refs.mirrorPattern.addEventListener("change", () => {
@@ -2632,21 +2721,11 @@ refs.generateBtn.addEventListener("click", () => {
 });
 refs.downloadBtn.addEventListener("click", downloadPatternOnly);
 refs.exportSheetBtn.addEventListener("click", exportInstructionSheet);
-refs.cropModeBtn.addEventListener("click", () => {
-  state.mobileCropEditing = !state.mobileCropEditing;
-  if (!state.mobileCropEditing) {
-    state.cropDraftRect = null;
-    state.cropStartPoint = null;
-    state.cropMoveOrigin = null;
-    state.cropPointerOffset = null;
-    state.cropResizeHandle = null;
-    state.cropResizeAnchor = null;
-    state.activePointerId = null;
-    drawImagePreview();
-  }
-  updateCropUi();
-});
+refs.openCropToolBtn.addEventListener("click", openCropTool);
+refs.saveCropBtn.addEventListener("click", saveCropTool);
+refs.cancelCropBtn.addEventListener("click", cancelCropTool);
 refs.resetCropBtn.addEventListener("click", () => resetCrop());
+refs.cropToolBackdrop.addEventListener("click", cancelCropTool);
 refs.resetPaletteBtn.addEventListener("click", () => {
   state.activePaletteIds = new Set(getPaletteEntries().map((entry) => entry.id));
   updatePaletteCounter();
@@ -2671,13 +2750,10 @@ refs.sourceCanvas.addEventListener("pointerdown", startCrop);
 refs.sourceCanvas.addEventListener("pointermove", moveCrop);
 refs.sourceCanvas.addEventListener("pointerup", finishCrop);
 refs.sourceCanvas.addEventListener("pointercancel", () => {
-  state.cropDraftRect = null;
-  state.cropStartPoint = null;
-  state.cropMoveOrigin = null;
-  state.cropPointerOffset = null;
-  state.cropResizeHandle = null;
-  state.cropResizeAnchor = null;
-  state.activePointerId = null;
+  clearCropInteractionState();
+  if (state.cropToolOpen && !state.cropDraftRect) {
+    state.cropDraftRect = { ...getCommittedCropRect() };
+  }
   drawImagePreview();
   updateCropUi();
 });
@@ -2692,6 +2768,12 @@ window.addEventListener("resize", () => {
   drawImagePreview();
   drawPatternPreview();
   drawMobileSetupPreview();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.cropToolOpen) {
+    cancelCropTool();
+  }
 });
 
 clearCanvas(sourceCtx, refs.sourceCanvas);

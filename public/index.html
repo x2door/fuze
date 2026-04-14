@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-12" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-14" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -280,17 +280,23 @@
           </div>
 
           <div class="preview-grid">
-            <article class="preview-card">
+            <article id="sourcePreviewCard" class="preview-card">
               <div class="preview-head">
                 <h3>Original</h3>
                 <span id="imageMeta">No image loaded</span>
               </div>
               <canvas id="sourceCanvas" class="source-canvas" width="320" height="320"></canvas>
               <div class="canvas-tools">
-                <span id="cropMeta" class="helper">Drag on the image to set a crop.</span>
+                <span id="cropMeta" class="helper">Open Crop image to adjust the visible area.</span>
                 <div class="preview-actions">
-                  <button id="cropModeBtn" class="button button-secondary crop-control-button" type="button">
-                    Unlock crop
+                  <button id="openCropToolBtn" class="button button-secondary crop-control-button" type="button">
+                    Crop image
+                  </button>
+                  <button id="saveCropBtn" class="button button-primary crop-control-button crop-tool-action" type="button">
+                    Save crop
+                  </button>
+                  <button id="cancelCropBtn" class="button button-secondary crop-control-button crop-tool-action" type="button">
+                    Cancel
                   </button>
                   <button id="resetCropBtn" class="button button-secondary crop-control-button" type="button">
                     Reset crop
@@ -354,6 +360,8 @@
       </nav>
     </div>
 
-    <script src="/app.js?v=20260413-12" type="module"></script>
+    <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
+
+    <script src="/app.js?v=20260413-14" type="module"></script>
   </body>
 </html>
