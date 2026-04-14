@@ -2755,7 +2755,19 @@ refs.openCropToolBtn.addEventListener("click", openCropTool);
 refs.saveCropBtn.addEventListener("click", saveCropTool);
 refs.cancelCropBtn.addEventListener("click", cancelCropTool);
 refs.resetCropBtn.addEventListener("click", () => resetCrop());
-refs.cropToolBackdrop.addEventListener("click", cancelCropTool);
+refs.cropToolBackdrop.addEventListener("click", (event) => {
+  if (!state.cropToolOpen) {
+    return;
+  }
+
+  if (isMobileLayout()) {
+    return;
+  }
+
+  if (event.target === refs.cropToolBackdrop) {
+    cancelCropTool();
+  }
+});
 refs.resetPaletteBtn.addEventListener("click", () => {
   state.activePaletteIds = new Set(getPaletteEntries().map((entry) => entry.id));
   updatePaletteCounter();
