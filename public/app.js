@@ -1087,9 +1087,8 @@ const renderMobileView = () => {
 
 const updateCropUi = () => {
   const editing = isCropEditingEnabled();
-  document.body.classList.toggle("crop-tool-open", editing);
   refs.sourcePreviewCard.classList.toggle("crop-tool-open", editing);
-  refs.cropToolBackdrop.hidden = !editing;
+  refs.cropToolBackdrop.hidden = true;
   refs.sourceCanvas.classList.toggle("crop-editing-active", editing);
   refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
   refs.openCropToolBtn.hidden = editing;
@@ -2224,6 +2223,7 @@ const openCropTool = () => {
   updateCropUi();
   queueAfterLayout(() => {
     drawImagePreview();
+    refs.sourcePreviewCard.scrollIntoView({ block: "start", behavior: "smooth" });
   });
 };
 

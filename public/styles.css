@@ -83,10 +83,6 @@ label,
   display: none;
 }
 
-body.crop-tool-open {
-  overflow: hidden;
-}
-
 .hero,
 .panel {
   border: 1px solid var(--line);
@@ -522,25 +518,14 @@ canvas {
   position: relative;
 }
 
-body.crop-tool-open .output-panel {
-  position: relative;
-  z-index: 110;
-}
-
 #sourcePreviewCard.crop-tool-open {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 120;
-  width: min(92vw, 980px);
-  max-height: min(90vh, 920px);
-  overflow: auto;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 176, 98, 0.45);
+  background: rgba(27, 26, 32, 0.96);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
 }
 
 #sourcePreviewCard.crop-tool-open canvas {
-  max-height: 68vh;
+  max-height: 72vh;
 }
 
 .setup-secondary-actions {
@@ -798,13 +783,15 @@ body.crop-tool-open .output-panel {
   }
 
   #sourcePreviewCard.crop-tool-open {
-    width: calc(100vw - 20px);
-    max-height: calc(100vh - 20px);
-    border-radius: 22px;
+    position: static;
+    transform: none;
+    width: auto;
+    max-height: none;
+    border-radius: 18px;
   }
 
   #sourcePreviewCard.crop-tool-open canvas {
-    max-height: 56vh;
+    max-height: 72vh;
   }
 
   .mobile-nav {
