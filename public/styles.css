@@ -494,6 +494,14 @@ canvas {
   color: var(--accent);
 }
 
+.crop-control-button {
+  min-height: 44px;
+}
+
+.setup-secondary-actions {
+  margin-top: 18px;
+}
+
 .pattern-actions {
   margin-top: 12px;
 }
@@ -693,6 +701,16 @@ canvas {
 
   .panel-actions {
     flex-direction: column;
+  }
+
+  .canvas-tools .preview-actions {
+    width: 100%;
+  }
+
+  .crop-control-button,
+  .setup-secondary-actions .button {
+    flex: 1 1 0;
+    justify-content: center;
   }
 
   .mobile-nav {

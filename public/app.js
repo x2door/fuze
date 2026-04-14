@@ -147,6 +147,7 @@ const refs = {
   shadowLiftValue: document.getElementById("shadowLiftValue"),
   highlightRecovery: document.getElementById("highlightRecovery"),
   highlightRecoveryValue: document.getElementById("highlightRecoveryValue"),
+  resetAdjustmentsBtn: document.getElementById("resetAdjustmentsBtn"),
   palettePreset: document.getElementById("palettePreset"),
   palettePresetNote: document.getElementById("palettePresetNote"),
   generateBtn: document.getElementById("generateBtn"),
@@ -437,6 +438,20 @@ const getBrightnessMultiplier = () => (Number(refs.brightnessBoost.value) || 100
 const getSaturationMultiplier = () => (Number(refs.saturationBoost.value) || 100) / 100;
 const getShadowLift = () => (Number(refs.shadowLift.value) || 0) / 100;
 const getHighlightRecovery = () => (Number(refs.highlightRecovery.value) || 0) / 100;
+
+const resetAdjustments = () => {
+  refs.hueShift.value = "0";
+  refs.brightnessBoost.value = "100";
+  refs.saturationBoost.value = "100";
+  refs.shadowLift.value = "0";
+  refs.highlightRecovery.value = "0";
+  updateAdjustmentLabels();
+
+  if (state.image) {
+    drawImagePreview();
+    generatePattern();
+  }
+};
 
 const applyImageAdjustments = (imageData) => {
   const hueShift = getHueShiftDegrees();
@@ -1009,8 +1024,10 @@ const updateCropUi = () => {
   refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
 
   if (refs.cropModeBtn) {
-    refs.cropModeBtn.textContent = editing ? "Done cropping" : "Edit crop";
+    refs.cropModeBtn.hidden = !isMobileLayout();
+    refs.cropModeBtn.textContent = editing ? "Lock crop" : "Unlock crop";
     refs.cropModeBtn.classList.toggle("crop-mode-active", editing);
+    refs.cropModeBtn.setAttribute("aria-pressed", String(editing));
   }
 
   if (!state.image) {
@@ -1019,7 +1036,7 @@ const updateCropUi = () => {
   }
 
   if (isMobileLayout() && !state.mobileCropEditing) {
-    refs.cropMeta.textContent = "Tap Edit crop to move or resize the crop. Scroll is safe while crop edit is off.";
+    refs.cropMeta.textContent = "Crop is locked. Tap Unlock crop to edit. Scrolling is safe while it stays locked.";
     return;
   }
 
@@ -2495,6 +2512,7 @@ refs.highlightRecovery.addEventListener("input", () => {
     generatePattern();
   }
 });
+refs.resetAdjustmentsBtn.addEventListener("click", resetAdjustments);
 refs.palettePreset.addEventListener("change", () => {
   applyPalettePreset(refs.palettePreset.value);
 });

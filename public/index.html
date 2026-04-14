@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-9" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-10" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -163,6 +163,12 @@
               </div>
             </div>
 
+            <div class="preview-actions setup-secondary-actions">
+              <button id="resetAdjustmentsBtn" class="button button-secondary" type="button">
+                Reset image tweaks
+              </button>
+            </div>
+
             <div class="panel-actions">
               <button id="generateBtn" class="button button-primary" type="button">
                 Generate pattern
@@ -256,8 +262,12 @@
               <div class="canvas-tools">
                 <span id="cropMeta" class="helper">Drag on the image to set a crop.</span>
                 <div class="preview-actions">
-                  <button id="cropModeBtn" class="text-button" type="button">Edit crop</button>
-                  <button id="resetCropBtn" class="text-button" type="button">Reset crop</button>
+                  <button id="cropModeBtn" class="button button-secondary crop-control-button" type="button">
+                    Unlock crop
+                  </button>
+                  <button id="resetCropBtn" class="button button-secondary crop-control-button" type="button">
+                    Reset crop
+                  </button>
                 </div>
               </div>
             </article>
@@ -317,6 +327,6 @@
       </nav>
     </div>
 
-    <script src="/app.js?v=20260413-9" type="module"></script>
+    <script src="/app.js?v=20260413-10" type="module"></script>
   </body>
 </html>
