@@ -184,6 +184,8 @@ const state = {
 const refs = {
   imageUpload: document.getElementById("imageUpload"),
   themeMode: document.getElementById("themeMode"),
+  themeDarkBtn: document.getElementById("themeDarkBtn"),
+  themeLightBtn: document.getElementById("themeLightBtn"),
   patternWidth: document.getElementById("patternWidth"),
   patternHeight: document.getElementById("patternHeight"),
   lockAspect: document.getElementById("lockAspect"),
@@ -416,6 +418,10 @@ const getThemeValue = (variableName, fallback) => {
 const renderTheme = () => {
   document.documentElement.dataset.theme = state.themeMode;
   refs.themeMode.value = state.themeMode;
+  refs.themeDarkBtn.classList.toggle("theme-toggle-button-active", state.themeMode === "dark");
+  refs.themeLightBtn.classList.toggle("theme-toggle-button-active", state.themeMode === "light");
+  refs.themeDarkBtn.setAttribute("aria-pressed", String(state.themeMode === "dark"));
+  refs.themeLightBtn.setAttribute("aria-pressed", String(state.themeMode === "light"));
   drawImagePreview();
   drawPatternPreview();
   drawMobileSetupPreview();
@@ -2951,6 +2957,16 @@ refs.imageUpload.addEventListener("change", (event) => {
 
 refs.themeMode.addEventListener("change", () => {
   state.themeMode = refs.themeMode.value === "light" ? "light" : "dark";
+  savePreferences();
+  renderTheme();
+});
+refs.themeDarkBtn.addEventListener("click", () => {
+  state.themeMode = "dark";
+  savePreferences();
+  renderTheme();
+});
+refs.themeLightBtn.addEventListener("click", () => {
+  state.themeMode = "light";
   savePreferences();
   renderTheme();
 });

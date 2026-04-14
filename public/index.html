@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260414-4" />
+    <link rel="stylesheet" href="/styles.css?v=20260414-5" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -37,8 +37,26 @@
           </div>
         </div>
         <div class="hero-theme">
-          <label for="themeMode">Theme</label>
-          <select id="themeMode">
+          <span class="hero-theme-label">Theme</span>
+          <div class="theme-toggle" role="tablist" aria-label="Theme mode">
+            <button
+              id="themeDarkBtn"
+              class="theme-toggle-button theme-toggle-button-active"
+              type="button"
+              aria-pressed="true"
+            >
+              Dark
+            </button>
+            <button
+              id="themeLightBtn"
+              class="theme-toggle-button"
+              type="button"
+              aria-pressed="false"
+            >
+              Light
+            </button>
+          </div>
+          <select id="themeMode" class="visually-hidden" aria-hidden="true" tabindex="-1">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
           </select>
@@ -424,6 +442,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260414-4" type="module"></script>
+    <script src="/app.js?v=20260414-5" type="module"></script>
   </body>
 </html>
