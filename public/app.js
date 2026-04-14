@@ -156,6 +156,8 @@ const refs = {
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
   sourcePreviewCard: document.getElementById("sourcePreviewCard"),
+  patternPreviewCard: document.getElementById("patternPreviewCard"),
+  patternResultsGrid: document.getElementById("patternResultsGrid"),
   openCropToolBtn: document.getElementById("openCropToolBtn"),
   saveCropBtn: document.getElementById("saveCropBtn"),
   cancelCropBtn: document.getElementById("cancelCropBtn"),
@@ -1087,10 +1089,13 @@ const renderMobileView = () => {
 
 const updateCropUi = () => {
   const editing = isCropEditingEnabled();
+  const focusedMobileCrop = editing && isMobileLayout();
   refs.sourcePreviewCard.classList.toggle("crop-tool-open", editing);
   refs.cropToolBackdrop.hidden = true;
   refs.sourceCanvas.classList.toggle("crop-editing-active", editing);
   refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
+  refs.patternPreviewCard.classList.toggle("mobile-view-hidden", focusedMobileCrop);
+  refs.patternResultsGrid.classList.toggle("mobile-view-hidden", focusedMobileCrop);
   refs.openCropToolBtn.hidden = editing;
   refs.saveCropBtn.hidden = !editing;
   refs.cancelCropBtn.hidden = !editing;
@@ -2223,7 +2228,7 @@ const openCropTool = () => {
   updateCropUi();
   queueAfterLayout(() => {
     drawImagePreview();
-    refs.sourcePreviewCard.scrollIntoView({ block: "start", behavior: "smooth" });
+    refs.sourcePreviewCard.scrollIntoView({ block: "start", behavior: "auto" });
   });
 };
 

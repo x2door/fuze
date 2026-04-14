@@ -788,10 +788,19 @@ canvas {
     width: auto;
     max-height: none;
     border-radius: 18px;
+    margin-top: 0;
   }
 
   #sourcePreviewCard.crop-tool-open canvas {
     max-height: 72vh;
+  }
+
+  #sourcePreviewCard.crop-tool-open .canvas-tools {
+    position: sticky;
+    bottom: 0;
+    margin-top: 0;
+    padding-top: 12px;
+    background: linear-gradient(180deg, rgba(25, 26, 33, 0), rgba(25, 26, 33, 0.96) 36%);
   }
 
   .mobile-nav {
