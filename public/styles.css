@@ -828,6 +828,10 @@ canvas {
     flex-direction: column;
   }
 
+  .background-tools-card {
+    display: none;
+  }
+
   .panel-actions {
     flex-direction: column;
   }

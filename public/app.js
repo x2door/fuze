@@ -150,7 +150,7 @@ const HAMA_CLASSIC_30 = [
 ];
 
 const state = {
-  selectedPalettePresetId: "original-48",
+  selectedPalettePresetId: "shinshin-48",
   mobileView: "setup",
   mobileSetupPreviewMode: "pattern",
   cropToolOpen: false,
@@ -318,9 +318,9 @@ const artkalStyle48Entries = PALETTE.map((entry, index) =>
 
 const PALETTE_PRESETS = [
   {
-    id: "original-48",
-    name: "My 48-color palette",
-    note: "Your original working palette from the uploaded chart.",
+    id: "shinshin-48",
+    name: "Shinshin Creation 48",
+    note: "Based on the Shinshin Creation 24,000 mini 2.6mm kit with 48 vivid pastel colors.",
     entries: artkalStyle48Entries,
   },
   {
