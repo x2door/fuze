@@ -2168,7 +2168,6 @@ const finishCrop = () => {
       width: Math.round(state.cropDraftRect.width),
       height: Math.round(state.cropDraftRect.height),
     };
-    state.cropDraftRect = null;
     state.cropStartPoint = null;
     state.cropMoveOrigin = null;
     state.cropPointerOffset = null;
