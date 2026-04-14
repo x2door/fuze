@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-8" />
+    <link rel="stylesheet" href="/styles.css?v=20260413-9" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -167,12 +167,6 @@
               <button id="generateBtn" class="button button-primary" type="button">
                 Generate pattern
               </button>
-              <button id="downloadBtn" class="button button-secondary" type="button">
-                Download pixelated PNG
-              </button>
-              <button id="exportSheetBtn" class="button button-secondary" type="button">
-                Export instruction sheet
-              </button>
             </div>
           </div>
 
@@ -262,6 +256,7 @@
               <div class="canvas-tools">
                 <span id="cropMeta" class="helper">Drag on the image to set a crop.</span>
                 <div class="preview-actions">
+                  <button id="cropModeBtn" class="text-button" type="button">Edit crop</button>
                   <button id="resetCropBtn" class="text-button" type="button">Reset crop</button>
                 </div>
               </div>
@@ -272,6 +267,16 @@
                 <span id="patternMeta">Waiting for generation</span>
               </div>
               <canvas id="patternCanvas" width="320" height="320"></canvas>
+              <div class="canvas-tools pattern-actions">
+                <div class="preview-actions">
+                  <button id="downloadBtn" class="button button-secondary" type="button">
+                    Download pixelated PNG
+                  </button>
+                  <button id="exportSheetBtn" class="button button-secondary" type="button">
+                    Export instruction sheet
+                  </button>
+                </div>
+              </div>
             </article>
           </div>
 
@@ -312,6 +317,6 @@
       </nav>
     </div>
 
-    <script src="/app.js?v=20260413-8" type="module"></script>
+    <script src="/app.js?v=20260413-9" type="module"></script>
   </body>
 </html>

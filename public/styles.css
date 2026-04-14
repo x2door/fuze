@@ -481,8 +481,21 @@ canvas {
 }
 
 .source-canvas {
+  cursor: default;
+  touch-action: pan-y;
+}
+
+.source-canvas.crop-editing-active {
   cursor: crosshair;
   touch-action: none;
+}
+
+.crop-mode-active {
+  color: var(--accent);
+}
+
+.pattern-actions {
+  margin-top: 12px;
 }
 
 .canvas-tools {

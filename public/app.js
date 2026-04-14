@@ -106,6 +106,7 @@ const PERLER_NEUTRAL_TRAY = [
 const state = {
   selectedPalettePresetId: "artkal-48",
   mobileView: "setup",
+  mobileCropEditing: false,
   image: null,
   imageName: "",
   imageWidth: 0,
@@ -115,6 +116,7 @@ const state = {
   cropStartPoint: null,
   cropMoveOrigin: null,
   cropPointerOffset: null,
+  activePointerId: null,
   cropResizeHandle: null,
   cropResizeAnchor: null,
   sourcePlacement: null,
@@ -150,6 +152,7 @@ const refs = {
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
+  cropModeBtn: document.getElementById("cropModeBtn"),
   resetCropBtn: document.getElementById("resetCropBtn"),
   cropMeta: document.getElementById("cropMeta"),
   customColorCode: document.getElementById("customColorCode"),
@@ -180,6 +183,7 @@ const patternCtx = refs.patternCanvas.getContext("2d");
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const isMobileLayout = () => window.innerWidth <= 720;
+const isCropEditingEnabled = () => !isMobileLayout() || state.mobileCropEditing;
 
 const hexToRgb = (hex) => {
   const normalized = hex.replace("#", "");
@@ -846,7 +850,6 @@ const cropToCanvasRect = (cropRect) => {
 const refreshImageMeta = () => {
   if (!state.image) {
     refs.imageMeta.textContent = "No image loaded";
-    refs.cropMeta.textContent = "Drag on the image to set a crop.";
     return;
   }
 
@@ -945,7 +948,7 @@ const drawImagePreview = () => {
     sourceCtx.restore();
   }
 
-  refreshImageMeta();
+  updateCropUi();
 };
 
 const setStats = (items) => {
@@ -998,6 +1001,29 @@ const renderMobileView = () => {
     button.classList.toggle("mobile-nav-button-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+};
+
+const updateCropUi = () => {
+  const editing = isCropEditingEnabled();
+  refs.sourceCanvas.classList.toggle("crop-editing-active", editing);
+  refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
+
+  if (refs.cropModeBtn) {
+    refs.cropModeBtn.textContent = editing ? "Done cropping" : "Edit crop";
+    refs.cropModeBtn.classList.toggle("crop-mode-active", editing);
+  }
+
+  if (!state.image) {
+    refs.cropMeta.textContent = "Upload an image to adjust the crop.";
+    return;
+  }
+
+  if (isMobileLayout() && !state.mobileCropEditing) {
+    refs.cropMeta.textContent = "Tap Edit crop to move or resize the crop. Scroll is safe while crop edit is off.";
+    return;
+  }
+
+  refreshImageMeta();
 };
 
 const setMobileView = (view, options = {}) => {
@@ -1949,6 +1975,11 @@ const resetCrop = (regenerate = true) => {
 };
 
 const finishCrop = () => {
+  if (state.activePointerId !== null && refs.sourceCanvas.hasPointerCapture?.(state.activePointerId)) {
+    refs.sourceCanvas.releasePointerCapture(state.activePointerId);
+  }
+  state.activePointerId = null;
+
   if (!state.image) {
     return;
   }
@@ -2010,10 +2041,11 @@ const finishCrop = () => {
 };
 
 const startCrop = (event) => {
-  if (!state.image) {
+  if (!state.image || !isCropEditingEnabled()) {
     return;
   }
 
+  state.activePointerId = event.pointerId;
   const canvasPoint = getCanvasPointer(event, refs.sourceCanvas);
   const point = canvasPointToImagePoint(canvasPoint);
   if (!point) {
@@ -2074,7 +2106,11 @@ const moveCrop = (event) => {
 
   const canvasPoint = getCanvasPointer(event, refs.sourceCanvas);
   if (!state.cropStartPoint) {
-    updateCropCursor(canvasPoint);
+    if (isCropEditingEnabled()) {
+      updateCropCursor(canvasPoint);
+    } else {
+      refs.sourceCanvas.style.cursor = "default";
+    }
     return;
   }
 
@@ -2107,6 +2143,7 @@ const loadImageFile = (file) => {
     const image = new Image();
 
     image.onload = () => {
+      state.mobileCropEditing = false;
       state.image = image;
       state.imageName = file.name;
       state.imageWidth = image.width;
@@ -2121,6 +2158,7 @@ const loadImageFile = (file) => {
       syncAspectFromWidth();
       drawImagePreview();
       generatePattern();
+      updateCropUi();
     };
 
     image.src = reader.result;
@@ -2155,7 +2193,7 @@ const downloadPatternOnly = () => {
     left: 16,
     top: 16,
     cellSize,
-    showSymbols: refs.showSymbols.checked && cellSize >= 18,
+    showSymbols: refs.showSymbols.checked && cellSize >= 12,
     drawGrid: true,
   });
 
@@ -2304,7 +2342,7 @@ const exportInstructionSheet = () => {
     left: padding + cardPadding,
     top: currentY + 80,
     cellSize: previewCell,
-    showSymbols: false,
+    showSymbols: refs.showSymbols.checked && previewCell >= 12,
     drawGrid: true,
   });
 
@@ -2482,6 +2520,20 @@ refs.generateBtn.addEventListener("click", () => {
 });
 refs.downloadBtn.addEventListener("click", downloadPatternOnly);
 refs.exportSheetBtn.addEventListener("click", exportInstructionSheet);
+refs.cropModeBtn.addEventListener("click", () => {
+  state.mobileCropEditing = !state.mobileCropEditing;
+  if (!state.mobileCropEditing) {
+    state.cropDraftRect = null;
+    state.cropStartPoint = null;
+    state.cropMoveOrigin = null;
+    state.cropPointerOffset = null;
+    state.cropResizeHandle = null;
+    state.cropResizeAnchor = null;
+    state.activePointerId = null;
+    drawImagePreview();
+  }
+  updateCropUi();
+});
 refs.resetCropBtn.addEventListener("click", () => resetCrop());
 refs.resetPaletteBtn.addEventListener("click", () => {
   state.activePaletteIds = new Set(getPaletteEntries().map((entry) => entry.id));
@@ -2513,11 +2565,13 @@ refs.sourceCanvas.addEventListener("pointercancel", () => {
   state.cropPointerOffset = null;
   state.cropResizeHandle = null;
   state.cropResizeAnchor = null;
+  state.activePointerId = null;
   drawImagePreview();
+  updateCropUi();
 });
 refs.sourceCanvas.addEventListener("pointerleave", () => {
   if (!state.cropStartPoint) {
-    refs.sourceCanvas.style.cursor = "crosshair";
+    refs.sourceCanvas.style.cursor = isCropEditingEnabled() ? "crosshair" : "default";
   }
 });
 
@@ -2539,3 +2593,4 @@ renderInstructions();
 updateAdjustmentLabels();
 refreshImageMeta();
 renderMobileView();
+updateCropUi();
