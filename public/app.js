@@ -103,11 +103,62 @@ const PERLER_NEUTRAL_TRAY = [
   { id: "perler-nt-brown", code: "PN08", name: "Brown", hex: "#6f4a35" },
 ];
 
+const ARTKAL_C_STARTER = [
+  { id: "artkal-starter-white", code: "C01", name: "White", hex: "#f7f7f3" },
+  { id: "artkal-starter-black", code: "C02", name: "Black", hex: "#111113" },
+  { id: "artkal-starter-light-gray", code: "C03", name: "Light Gray", hex: "#bfbcc0" },
+  { id: "artkal-starter-mikado-yellow", code: "C04", name: "Mikado Yellow", hex: "#f3be00" },
+  { id: "artkal-starter-tiger-moth-orange", code: "C05", name: "Tiger Moth Orange", hex: "#de7314" },
+  { id: "artkal-starter-rose-rush", code: "C06", name: "Rose Rush UA Red", hex: "#be1b59" },
+  { id: "artkal-starter-lightish-green", code: "C07", name: "Lightish Green", hex: "#7bc84d" },
+  { id: "artkal-starter-green-ncs", code: "C08", name: "Green NCS", hex: "#2d9b63" },
+  { id: "artkal-starter-blue-celeste", code: "C09", name: "Blue Celeste", hex: "#86bde8" },
+  { id: "artkal-starter-cosmic-cobalt", code: "C10", name: "Cosmic Cobalt", hex: "#3f3da0" },
+];
+
+const HAMA_CLASSIC_30 = [
+  { id: "hama-01-white", code: "H01", name: "White", hex: "#f4f1ea" },
+  { id: "hama-02-cream", code: "H02", name: "Cream", hex: "#f5efcf" },
+  { id: "hama-03-yellow", code: "H03", name: "Yellow", hex: "#f2cc2c" },
+  { id: "hama-04-orange", code: "H04", name: "Orange", hex: "#eeaf48" },
+  { id: "hama-05-red", code: "H05", name: "Red", hex: "#be1b59" },
+  { id: "hama-06-pink", code: "H06", name: "Pink", hex: "#d8b0d8" },
+  { id: "hama-07-lilac", code: "H07", name: "Lilac", hex: "#dcc0df" },
+  { id: "hama-08-purple", code: "H08", name: "Purple", hex: "#a27cc8" },
+  { id: "hama-09-violet", code: "H09", name: "Violet", hex: "#6f2ea3" },
+  { id: "hama-10-dark-blue", code: "H10", name: "Dark Blue", hex: "#462d84" },
+  { id: "hama-11-blue", code: "H11", name: "Blue", hex: "#7364cc" },
+  { id: "hama-12-light-blue", code: "H12", name: "Light Blue", hex: "#86bde8" },
+  { id: "hama-13-turquoise", code: "H13", name: "Turquoise", hex: "#63bdd3" },
+  { id: "hama-14-mint", code: "H14", name: "Mint", hex: "#65c4b6" },
+  { id: "hama-15-light-green", code: "H15", name: "Light Green", hex: "#a8d39b" },
+  { id: "hama-16-green", code: "H16", name: "Green", hex: "#43b63f" },
+  { id: "hama-17-dark-green", code: "H17", name: "Dark Green", hex: "#2d9b63" },
+  { id: "hama-18-khaki", code: "H18", name: "Khaki", hex: "#eadf93" },
+  { id: "hama-19-sand", code: "H19", name: "Sand", hex: "#dec3ab" },
+  { id: "hama-20-beige", code: "H20", name: "Beige", hex: "#efc4b8" },
+  { id: "hama-21-peach", code: "H21", name: "Peach", hex: "#ecad96" },
+  { id: "hama-22-brown", code: "H22", name: "Brown", hex: "#835838" },
+  { id: "hama-23-dark-brown", code: "H23", name: "Dark Brown", hex: "#6f4a35" },
+  { id: "hama-24-light-gray", code: "H24", name: "Light Gray", hex: "#bfbcc0" },
+  { id: "hama-25-gray", code: "H25", name: "Gray", hex: "#9a9997" },
+  { id: "hama-26-dark-gray", code: "H26", name: "Dark Gray", hex: "#757576" },
+  { id: "hama-27-black", code: "H27", name: "Black", hex: "#111113" },
+  { id: "hama-28-lavender", code: "H28", name: "Lavender", hex: "#bdb4df" },
+  { id: "hama-29-pastel-pink", code: "H29", name: "Pastel Pink", hex: "#c897c1" },
+  { id: "hama-30-gold", code: "H30", name: "Gold", hex: "#ba9659" },
+];
+
 const state = {
-  selectedPalettePresetId: "artkal-48",
+  selectedPalettePresetId: "original-48",
   mobileView: "setup",
   mobileSetupPreviewMode: "pattern",
   cropToolOpen: false,
+  backgroundPickerActive: false,
+  backgroundRemovalEnabled: false,
+  backgroundSampleHex: null,
+  backgroundTolerance: 24,
+  desktopSetupCollapsed: false,
   adjustmentApplyTimer: null,
   image: null,
   imageName: "",
@@ -135,7 +186,16 @@ const refs = {
   lockAspect: document.getElementById("lockAspect"),
   showSymbols: document.getElementById("showSymbols"),
   mirrorPattern: document.getElementById("mirrorPattern"),
+  appLayout: document.getElementById("appLayout"),
   backgroundMode: document.getElementById("backgroundMode"),
+  autoDetectBackgroundBtn: document.getElementById("autoDetectBackgroundBtn"),
+  pickBackgroundBtn: document.getElementById("pickBackgroundBtn"),
+  clearBackgroundPickBtn: document.getElementById("clearBackgroundPickBtn"),
+  backgroundSwatch: document.getElementById("backgroundSwatch"),
+  backgroundColorValue: document.getElementById("backgroundColorValue"),
+  removePickedBackground: document.getElementById("removePickedBackground"),
+  backgroundTolerance: document.getElementById("backgroundTolerance"),
+  backgroundToleranceValue: document.getElementById("backgroundToleranceValue"),
   ditherStrength: document.getElementById("ditherStrength"),
   matchingMode: document.getElementById("matchingMode"),
   inventoryBalancing: document.getElementById("inventoryBalancing"),
@@ -155,6 +215,7 @@ const refs = {
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
+  toggleSetupBtn: document.getElementById("toggleSetupBtn"),
   sourcePreviewCard: document.getElementById("sourcePreviewCard"),
   patternPreviewCard: document.getElementById("patternPreviewCard"),
   patternResultsGrid: document.getElementById("patternResultsGrid"),
@@ -257,10 +318,22 @@ const artkalStyle48Entries = PALETTE.map((entry, index) =>
 
 const PALETTE_PRESETS = [
   {
-    id: "artkal-48",
-    name: "Artkal-style 48 color chart",
-    note: "Good default and close to the chart you uploaded.",
+    id: "original-48",
+    name: "My 48-color palette",
+    note: "Your original working palette from the uploaded chart.",
     entries: artkalStyle48Entries,
+  },
+  {
+    id: "artkal-c-starter",
+    name: "Artkal C mini starter (10)",
+    note: "Compact 2.6mm-style starter palette for quick portraits and sprites.",
+    entries: ARTKAL_C_STARTER.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
+    id: "hama-classic-30",
+    name: "Hama classic-inspired (30)",
+    note: "Balanced classic set for portraits, icons, and general minis.",
+    entries: HAMA_CLASSIC_30.map((entry) => createPaletteEntry(entry, entry.code)),
   },
   {
     id: "perler-large-tray",
@@ -297,6 +370,39 @@ const getLabHueDegrees = (labColor) => {
 const getHueDifference = (leftHue, rightHue) => {
   const rawDifference = Math.abs(leftHue - rightHue);
   return Math.min(rawDifference, 360 - rawDifference);
+};
+
+const isDesktopLayout = () => !isMobileLayout();
+
+const getBackgroundTolerance = () => Number(refs.backgroundTolerance.value) || 0;
+
+const setBackgroundSample = (hex) => {
+  state.backgroundSampleHex = hex;
+  refs.backgroundSwatch.style.background = hex || "transparent";
+  refs.backgroundColorValue.textContent = hex ? `Picked color ${hex.toUpperCase()}` : "No background color selected";
+};
+
+const renderBackgroundUi = () => {
+  const hasImage = Boolean(state.image);
+  refs.pickBackgroundBtn.classList.toggle("crop-mode-active", state.backgroundPickerActive);
+  refs.pickBackgroundBtn.textContent = state.backgroundPickerActive ? "Tap image…" : "Pick from image";
+  refs.removePickedBackground.checked = state.backgroundRemovalEnabled;
+  refs.backgroundTolerance.value = String(state.backgroundTolerance);
+  refs.backgroundToleranceValue.textContent = String(state.backgroundTolerance);
+  refs.autoDetectBackgroundBtn.disabled = !hasImage;
+  refs.pickBackgroundBtn.disabled = !hasImage;
+  refs.removePickedBackground.disabled = !hasImage || !state.backgroundSampleHex;
+  refs.backgroundTolerance.disabled = !hasImage;
+  refs.clearBackgroundPickBtn.disabled = !hasImage || (!state.backgroundSampleHex && !state.backgroundRemovalEnabled);
+  setBackgroundSample(state.backgroundSampleHex);
+  refs.sourceCanvas.classList.toggle("background-picker-active", state.backgroundPickerActive);
+};
+
+const renderDesktopLayout = () => {
+  const collapsed = isDesktopLayout() && state.desktopSetupCollapsed;
+  refs.appLayout.classList.toggle("layout-setup-collapsed", collapsed);
+  refs.toggleSetupBtn.hidden = !isDesktopLayout();
+  refs.toggleSetupBtn.textContent = collapsed ? "Show setup" : "Hide setup";
 };
 
 const deltaE2000 = (left, right) => {
@@ -562,6 +668,13 @@ const getSaturationMultiplier = () => (Number(refs.saturationBoost.value) || 100
 const getShadowLift = () => (Number(refs.shadowLift.value) || 0) / 100;
 const getHighlightRecovery = () => (Number(refs.highlightRecovery.value) || 0) / 100;
 
+const getBackgroundDistance = (left, right) =>
+  Math.sqrt(
+    (left.r - right.r) * (left.r - right.r) +
+      (left.g - right.g) * (left.g - right.g) +
+      (left.b - right.b) * (left.b - right.b),
+  );
+
 const applyImageAdjustmentChanges = () => {
   if (!state.image) {
     return;
@@ -604,6 +717,10 @@ const applyImageAdjustments = (imageData) => {
   const saturationMultiplier = getSaturationMultiplier();
   const shadowLift = getShadowLift();
   const highlightRecovery = getHighlightRecovery();
+  const backgroundSampleRgb = state.backgroundRemovalEnabled && state.backgroundSampleHex
+    ? hexToRgb(state.backgroundSampleHex)
+    : null;
+  const backgroundTolerance = getBackgroundTolerance();
   const { data } = imageData;
 
   if (
@@ -611,7 +728,8 @@ const applyImageAdjustments = (imageData) => {
     brightnessMultiplier === 1 &&
     saturationMultiplier === 1 &&
     shadowLift === 0 &&
-    highlightRecovery === 0
+    highlightRecovery === 0 &&
+    !backgroundSampleRgb
   ) {
     return imageData;
   }
@@ -651,6 +769,13 @@ const applyImageAdjustments = (imageData) => {
     data[index] = adjustedRgb.r;
     data[index + 1] = adjustedRgb.g;
     data[index + 2] = adjustedRgb.b;
+
+    if (backgroundSampleRgb) {
+      const colorDistance = getBackgroundDistance(adjustedRgb, backgroundSampleRgb);
+      if (colorDistance <= backgroundTolerance) {
+        data[index + 3] = 0;
+      }
+    }
   }
 
   return imageData;
@@ -712,6 +837,73 @@ const drawAdjustedImageRegion = (ctx, drawConfig) => {
     destinationWidth,
     destinationHeight,
   );
+};
+
+const getAdjustedPixelColorAt = (imageX, imageY) => {
+  if (!state.image) {
+    return null;
+  }
+
+  const sampleCanvas = document.createElement("canvas");
+  sampleCanvas.width = 1;
+  sampleCanvas.height = 1;
+  const sampleCtx = sampleCanvas.getContext("2d", { willReadFrequently: true });
+
+  sampleCtx.drawImage(
+    state.image,
+    clamp(Math.round(imageX), 0, state.imageWidth - 1),
+    clamp(Math.round(imageY), 0, state.imageHeight - 1),
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+  );
+
+  const adjusted = applyImageAdjustments(sampleCtx.getImageData(0, 0, 1, 1)).data;
+  return { r: adjusted[0], g: adjusted[1], b: adjusted[2] };
+};
+
+const autoDetectBackgroundColor = () => {
+  if (!state.image) {
+    return null;
+  }
+
+  const previousBackgroundRemovalEnabled = state.backgroundRemovalEnabled;
+  state.backgroundRemovalEnabled = false;
+
+  const samplePoints = [
+    { x: 2, y: 2 },
+    { x: state.imageWidth - 3, y: 2 },
+    { x: 2, y: state.imageHeight - 3 },
+    { x: state.imageWidth - 3, y: state.imageHeight - 3 },
+    { x: Math.floor(state.imageWidth / 2), y: 2 },
+    { x: Math.floor(state.imageWidth / 2), y: state.imageHeight - 3 },
+  ];
+
+  const colors = samplePoints
+    .map((point) => getAdjustedPixelColorAt(point.x, point.y))
+    .filter(Boolean);
+
+  state.backgroundRemovalEnabled = previousBackgroundRemovalEnabled;
+
+  if (colors.length === 0) {
+    return null;
+  }
+
+  const average = colors.reduce(
+    (accumulator, color) => ({
+      r: accumulator.r + color.r,
+      g: accumulator.g + color.g,
+      b: accumulator.b + color.b,
+    }),
+    { r: 0, g: 0, b: 0 },
+  );
+
+  return `#${[average.r, average.g, average.b]
+    .map((value) => Math.round(value / colors.length).toString(16).padStart(2, "0"))
+    .join("")}`;
 };
 
 const updateAdjustmentLabels = () => {
@@ -1029,7 +1221,9 @@ const refreshImageMeta = () => {
   const ratioHeight = clamp(Number(refs.patternHeight.value) || 64, 1, 220);
 
   refs.imageMeta.textContent = `${state.imageName} - ${state.imageWidth} x ${state.imageHeight}px`;
-  refs.cropMeta.textContent = state.cropToolOpen
+  refs.cropMeta.textContent = state.backgroundPickerActive
+    ? "Tap the image to choose the background color you want to make transparent."
+    : state.cropToolOpen
     ? `Crop area: ${cropLabel}. Drag inside to move, drag the corner arrows to resize, or drag outside to create a new ${ratioWidth}:${ratioHeight} crop.`
     : `Current crop: ${cropLabel}. Open Crop image to adjust the visible area.`;
 };
@@ -1213,6 +1407,10 @@ const savePreferences = () => {
         ]),
       ),
       inventoryBalancing: refs.inventoryBalancing.value,
+      backgroundSampleHex: state.backgroundSampleHex,
+      backgroundRemovalEnabled: state.backgroundRemovalEnabled,
+      backgroundTolerance: state.backgroundTolerance,
+      desktopSetupCollapsed: state.desktopSetupCollapsed,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -1286,7 +1484,20 @@ const loadPreferences = () => {
       refs.inventoryBalancing.value = saved.inventoryBalancing;
     }
 
+    const backgroundHex = normalizeHexColor(saved.backgroundSampleHex);
+    if (backgroundHex) {
+      state.backgroundSampleHex = backgroundHex;
+    }
+
+    state.backgroundRemovalEnabled = Boolean(saved.backgroundRemovalEnabled);
+    state.backgroundTolerance = clamp(Number(saved.backgroundTolerance) || 24, 0, 160);
+    refs.backgroundTolerance.value = String(state.backgroundTolerance);
+    refs.removePickedBackground.checked = state.backgroundRemovalEnabled;
+    state.desktopSetupCollapsed = Boolean(saved.desktopSetupCollapsed);
+
     refreshPalettePresetUi();
+    renderBackgroundUi();
+    renderDesktopLayout();
   } catch (error) {
     console.warn("Unable to load saved palette preferences.", error);
   }
@@ -2237,6 +2448,8 @@ const openCropTool = () => {
   }
 
   clearCropInteractionState();
+  state.backgroundPickerActive = false;
+  renderBackgroundUi();
   state.cropToolOpen = true;
   const currentCrop = getCommittedCropRect();
   state.cropDraftRect = currentCrop ? { ...currentCrop } : createFullCropRect();
@@ -2286,7 +2499,40 @@ const saveCropTool = () => {
   generatePattern();
 };
 
+const pickBackgroundFromCanvasEvent = (event) => {
+  if (!state.image || state.cropToolOpen) {
+    return false;
+  }
+
+  const canvasPoint = getCanvasPointer(event, refs.sourceCanvas);
+  const imagePoint = canvasPointToImagePoint(canvasPoint);
+  if (!imagePoint) {
+    return false;
+  }
+
+  const pickedColor = getAdjustedPixelColorAt(imagePoint.x, imagePoint.y);
+  if (!pickedColor) {
+    return false;
+  }
+
+  state.backgroundSampleHex = `#${[pickedColor.r, pickedColor.g, pickedColor.b]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("")}`;
+  state.backgroundPickerActive = false;
+  state.backgroundRemovalEnabled = true;
+  renderBackgroundUi();
+  savePreferences();
+  applyImageAdjustmentChanges();
+  return true;
+};
+
 const startCrop = (event) => {
+  if (state.backgroundPickerActive) {
+    event.preventDefault();
+    pickBackgroundFromCanvasEvent(event);
+    return;
+  }
+
   if (!state.image || !isCropEditingEnabled()) {
     return;
   }
@@ -2351,6 +2597,11 @@ const moveCrop = (event) => {
   }
 
   const canvasPoint = getCanvasPointer(event, refs.sourceCanvas);
+  if (state.backgroundPickerActive) {
+    refs.sourceCanvas.style.cursor = "crosshair";
+    return;
+  }
+
   if (!state.cropStartPoint) {
     if (isCropEditingEnabled()) {
       updateCropCursor(canvasPoint);
@@ -2402,6 +2653,7 @@ const loadImageFile = (file) => {
       state.cropResizeHandle = null;
       state.cropResizeAnchor = null;
       syncAspectFromWidth();
+      renderBackgroundUi();
       drawImagePreview();
       generatePattern();
       updateCropUi();
@@ -2689,6 +2941,53 @@ refs.patternHeight.addEventListener("keydown", (event) => {
   }
 });
 
+refs.autoDetectBackgroundBtn.addEventListener("click", () => {
+  const detected = autoDetectBackgroundColor();
+  if (!detected) {
+    return;
+  }
+
+  state.backgroundSampleHex = detected;
+  state.backgroundRemovalEnabled = true;
+  state.backgroundPickerActive = false;
+  renderBackgroundUi();
+  savePreferences();
+  applyImageAdjustmentChanges();
+});
+
+refs.pickBackgroundBtn.addEventListener("click", () => {
+  state.backgroundPickerActive = !state.backgroundPickerActive;
+  renderBackgroundUi();
+});
+
+refs.clearBackgroundPickBtn.addEventListener("click", () => {
+  state.backgroundSampleHex = null;
+  state.backgroundRemovalEnabled = false;
+  state.backgroundPickerActive = false;
+  renderBackgroundUi();
+  savePreferences();
+  applyImageAdjustmentChanges();
+});
+
+refs.removePickedBackground.addEventListener("change", () => {
+  state.backgroundRemovalEnabled = refs.removePickedBackground.checked;
+  renderBackgroundUi();
+  savePreferences();
+  applyImageAdjustmentChanges();
+});
+
+refs.backgroundTolerance.addEventListener("input", () => {
+  state.backgroundTolerance = getBackgroundTolerance();
+  renderBackgroundUi();
+});
+
+refs.backgroundTolerance.addEventListener("change", () => {
+  state.backgroundTolerance = getBackgroundTolerance();
+  renderBackgroundUi();
+  savePreferences();
+  applyImageAdjustmentChanges();
+});
+
 refs.showSymbols.addEventListener("change", drawPatternPreview);
 refs.mirrorPattern.addEventListener("change", () => {
   if (state.image) {
@@ -2807,6 +3106,15 @@ refs.customColorHex.addEventListener("input", () => {
   }
 });
 refs.addCustomColorBtn.addEventListener("click", addCustomColor);
+refs.toggleSetupBtn.addEventListener("click", () => {
+  state.desktopSetupCollapsed = !state.desktopSetupCollapsed;
+  renderDesktopLayout();
+  savePreferences();
+  queueAfterLayout(() => {
+    drawImagePreview();
+    drawPatternPreview();
+  });
+});
 
 refs.sourceCanvas.addEventListener("pointerdown", startCrop);
 refs.sourceCanvas.addEventListener("pointermove", moveCrop);
@@ -2821,12 +3129,13 @@ refs.sourceCanvas.addEventListener("pointercancel", () => {
 });
 refs.sourceCanvas.addEventListener("pointerleave", () => {
   if (!state.cropStartPoint) {
-    refs.sourceCanvas.style.cursor = isCropEditingEnabled() ? "crosshair" : "default";
+    refs.sourceCanvas.style.cursor = state.backgroundPickerActive || isCropEditingEnabled() ? "crosshair" : "default";
   }
 });
 
 window.addEventListener("resize", () => {
   renderMobileView();
+  renderDesktopLayout();
   drawImagePreview();
   drawPatternPreview();
   drawMobileSetupPreview();
@@ -2842,6 +3151,7 @@ clearCanvas(sourceCtx, refs.sourceCanvas);
 clearCanvas(patternCtx, refs.patternCanvas);
 loadPreferences();
 refreshPalettePresetUi();
+renderBackgroundUi();
 renderPalette();
 updatePaletteCounter();
 renderStats();
@@ -2850,5 +3160,6 @@ renderInstructions();
 updateAdjustmentLabels();
 refreshImageMeta();
 renderMobileView();
+renderDesktopLayout();
 updateCropUi();
 drawMobileSetupPreview();

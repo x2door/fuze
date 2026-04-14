@@ -161,6 +161,18 @@ label,
   align-items: start;
 }
 
+.layout.layout-setup-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.layout.layout-setup-collapsed .controls-panel {
+  display: none;
+}
+
+.layout.layout-setup-collapsed .preview-grid {
+  grid-template-columns: minmax(240px, 0.62fr) minmax(520px, 1.38fr);
+}
+
 .panel {
   border-radius: var(--radius-xl);
   padding: 24px;
@@ -176,6 +188,13 @@ label,
   color: var(--muted);
 }
 
+.panel-heading-split {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
 .control-group {
   display: grid;
   gap: 8px;
@@ -184,6 +203,40 @@ label,
 
 .compact-control {
   margin-top: 0;
+}
+
+.background-tools-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.background-tools-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.background-tools-actions .button {
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+.background-pick-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+}
+
+.background-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background:
+    linear-gradient(45deg, #14161c 25%, #1c1e26 25%, #1c1e26 50%, #14161c 50%, #14161c 75%, #1c1e26 75%);
+  background-size: 10px 10px;
 }
 
 .grid {
@@ -452,7 +505,7 @@ button:focus-visible {
 }
 
 .preview-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(260px, 0.78fr) minmax(420px, 1.22fr);
   margin-top: 16px;
 }
 
@@ -487,6 +540,10 @@ canvas {
 .source-canvas {
   cursor: default;
   touch-action: pan-y;
+}
+
+.source-canvas.background-picker-active {
+  cursor: crosshair;
 }
 
 .source-canvas.crop-editing-active {
@@ -534,6 +591,10 @@ canvas {
 
 .pattern-actions {
   margin-top: 12px;
+}
+
+.desktop-toggle-button {
+  white-space: nowrap;
 }
 
 .mobile-live-preview-head {
@@ -753,6 +814,18 @@ canvas {
   .grid.two,
   .palette-grid {
     grid-template-columns: 1fr;
+  }
+
+  .panel-heading-split {
+    display: block;
+  }
+
+  .desktop-toggle-button {
+    display: none;
+  }
+
+  .background-tools-actions {
+    flex-direction: column;
   }
 
   .panel-actions {

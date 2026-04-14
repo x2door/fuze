@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260413-24" />
+    <link rel="stylesheet" href="/styles.css?v=20260414-1" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -38,7 +38,7 @@
         </div>
       </header>
 
-      <main class="layout">
+      <main id="appLayout" class="layout">
         <section class="panel controls-panel">
           <div class="mobile-view-panel" data-mobile-view-panel="setup">
             <div class="panel-heading">
@@ -121,6 +121,38 @@
                 <input id="mirrorPattern" type="checkbox" />
                 <span>Mirror pattern horizontally</span>
               </label>
+            </div>
+
+            <div class="control-group background-tools-card">
+              <label>Background cleanup</label>
+              <div class="background-tools-actions">
+                <button id="autoDetectBackgroundBtn" class="button button-secondary" type="button">
+                  Detect background
+                </button>
+                <button id="pickBackgroundBtn" class="button button-secondary" type="button">
+                  Pick from image
+                </button>
+                <button id="clearBackgroundPickBtn" class="button button-secondary" type="button">
+                  Clear
+                </button>
+              </div>
+              <div class="background-pick-meta">
+                <span id="backgroundSwatch" class="swatch background-swatch"></span>
+                <span id="backgroundColorValue" class="helper">No background color selected</span>
+              </div>
+              <label class="toggle">
+                <input id="removePickedBackground" type="checkbox" />
+                <span>Make picked background transparent</span>
+              </label>
+              <div class="control-group compact-control">
+                <label for="backgroundTolerance">
+                  Background tolerance <span id="backgroundToleranceValue">24</span>
+                </label>
+                <input id="backgroundTolerance" type="range" min="0" max="160" step="1" value="24" />
+                <p class="helper">
+                  Use Pick from image, then raise tolerance until the flat background disappears cleanly.
+                </p>
+              </div>
             </div>
 
             <div class="grid two">
@@ -230,7 +262,9 @@
             <div class="control-group">
               <label for="palettePreset">Set preset</label>
               <select id="palettePreset">
-                <option value="artkal-48">Artkal-style 48 color chart</option>
+                <option value="original-48">My 48-color palette</option>
+                <option value="artkal-c-starter">Artkal C mini starter (10)</option>
+                <option value="hama-classic-30">Hama classic-inspired (30)</option>
                 <option value="perler-large-tray">Perler Mini Large Tray (16)</option>
                 <option value="perler-summer-tray">Perler Summer Mini Tray (16)</option>
                 <option value="perler-neutral-tray">Perler Mini Neutral Tray (8)</option>
@@ -271,9 +305,14 @@
         </section>
 
         <section class="panel output-panel" data-mobile-view-panel="pattern">
-          <div class="panel-heading">
-            <h2>Pattern</h2>
-            <p>Preview, bead counts, and row-by-row building instructions.</p>
+          <div class="panel-heading panel-heading-split">
+            <div>
+              <h2>Pattern</h2>
+              <p>Preview, bead counts, and row-by-row building instructions.</p>
+            </div>
+            <button id="toggleSetupBtn" class="button button-secondary desktop-toggle-button" type="button">
+              Hide setup
+            </button>
           </div>
 
           <div class="stats-grid" id="statsGrid">
@@ -378,6 +417,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260413-24" type="module"></script>
+    <script src="/app.js?v=20260414-1" type="module"></script>
   </body>
 </html>
