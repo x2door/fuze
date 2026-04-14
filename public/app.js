@@ -377,6 +377,12 @@ const clearCanvas = (ctx, canvas) => {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 };
 
+const queueAfterLayout = (callback) => {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(callback);
+  });
+};
+
 const resizeCanvasToDisplaySize = (canvas) => {
   const rect = canvas.getBoundingClientRect();
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -1496,6 +1502,28 @@ const getTargetDimensions = () => ({
   height: clamp(Number(refs.patternHeight.value) || 64, 8, 220),
 });
 
+const applyPatternDimensionInputs = (changedAxis) => {
+  let width = clamp(Number(refs.patternWidth.value) || 64, 8, 220);
+  let height = clamp(Number(refs.patternHeight.value) || 64, 8, 220);
+
+  if (refs.lockAspect.checked && state.image) {
+    const source = getCropSourceDimensions();
+    if (changedAxis === "width") {
+      height = clamp(Math.round(width * (source.height / source.width)), 8, 220);
+    } else if (changedAxis === "height") {
+      width = clamp(Math.round(height * (source.width / source.height)), 8, 220);
+    }
+  }
+
+  refs.patternWidth.value = String(width);
+  refs.patternHeight.value = String(height);
+
+  if (state.image) {
+    drawImagePreview();
+    generatePattern();
+  }
+};
+
 const getMatchingMode = () => refs.matchingMode.value || "balanced";
 const getInventoryBalanceMode = () => refs.inventoryBalancing.value || "off";
 
@@ -2194,7 +2222,7 @@ const openCropTool = () => {
   const currentCrop = getCommittedCropRect();
   state.cropDraftRect = currentCrop ? { ...currentCrop } : createFullCropRect();
   updateCropUi();
-  requestAnimationFrame(() => {
+  queueAfterLayout(() => {
     drawImagePreview();
   });
 };
@@ -2204,7 +2232,7 @@ const cancelCropTool = () => {
   state.cropToolOpen = false;
   state.cropDraftRect = null;
   updateCropUi();
-  requestAnimationFrame(() => {
+  queueAfterLayout(() => {
     drawImagePreview();
   });
 };
@@ -2232,7 +2260,7 @@ const saveCropTool = () => {
   }
 
   updateCropUi();
-  requestAnimationFrame(() => {
+  queueAfterLayout(() => {
     drawImagePreview();
   });
   generatePattern();
@@ -2618,19 +2646,11 @@ refs.imageUpload.addEventListener("change", (event) => {
 });
 
 const handlePatternWidthChange = () => {
-  syncAspectFromWidth();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
+  applyPatternDimensionInputs("width");
 };
 
 const handlePatternHeightChange = () => {
-  syncAspectFromHeight();
-  if (state.image) {
-    drawImagePreview();
-    generatePattern();
-  }
+  applyPatternDimensionInputs("height");
 };
 
 refs.patternWidth.addEventListener("input", handlePatternWidthChange);
