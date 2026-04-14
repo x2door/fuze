@@ -1096,10 +1096,14 @@ const updateCropUi = () => {
   refs.sourceCanvas.classList.toggle("crop-editing-locked", !editing);
   refs.patternPreviewCard.classList.toggle("mobile-view-hidden", focusedMobileCrop);
   refs.patternResultsGrid.classList.toggle("mobile-view-hidden", focusedMobileCrop);
+  refs.openCropToolBtn.textContent = "Crop image";
+  refs.saveCropBtn.textContent = "Save";
+  refs.cancelCropBtn.textContent = "Cancel";
+  refs.resetCropBtn.textContent = "Reset";
   refs.openCropToolBtn.hidden = editing;
   refs.saveCropBtn.hidden = !editing;
   refs.cancelCropBtn.hidden = !editing;
-  refs.resetCropBtn.textContent = editing ? "Reset to full image" : "Reset crop";
+  refs.resetCropBtn.hidden = !editing;
 
   if (!state.image) {
     refs.cropMeta.textContent = "Upload an image to adjust the crop.";
