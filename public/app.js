@@ -398,7 +398,11 @@ const resizeCanvasToDisplaySize = (canvas) => {
 };
 
 const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
-  const { showCropOverlay = true, cropToCommittedView = false } = options;
+  const {
+    showCropOverlay = true,
+    cropToCommittedView = false,
+    showCommittedCropOverlay = false,
+  } = options;
 
   resizeCanvasToDisplaySize(canvas);
   clearCanvas(ctx, canvas);
@@ -434,11 +438,12 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
     destinationHeight: fit.height,
   });
 
-  if (!showCropOverlay || !state.sourcePlacement) {
+  if ((!showCropOverlay && !showCommittedCropOverlay) || !state.sourcePlacement) {
     return true;
   }
 
-  const cropRect = cropToCanvasRect(getEditableCropRect());
+  const overlayCrop = showCropOverlay ? getEditableCropRect() : getCommittedCropRect();
+  const cropRect = cropToCanvasRect(overlayCrop);
   if (!cropRect) {
     return true;
   }
@@ -459,16 +464,16 @@ const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
     fit.width,
     offsetY + fit.height - (cropRect.y + cropRect.height),
   );
-  const isFullCrop = isFullCropRect(getEditableCropRect());
+  const isFullCrop = isFullCropRect(overlayCrop);
   ctx.strokeStyle = "#ffb062";
   ctx.lineWidth = 2;
   ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
-  if (!isFullCrop) {
+  if (showCropOverlay && !isFullCrop) {
     ctx.fillStyle = "rgba(255, 176, 98, 0.2)";
     ctx.fillRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
   }
 
-  if (!isFullCrop) {
+  if (showCropOverlay && !isFullCrop) {
     const handleRadius = CROP_HANDLE_SIZE * Math.min(window.devicePixelRatio || 1, 2);
     const handles = [
       { x: cropRect.x, y: cropRect.y, glyph: "↖" },
@@ -1034,7 +1039,8 @@ const drawImagePreview = () => {
 
   drawSourcePreviewInto(sourceCtx, refs.sourceCanvas, {
     showCropOverlay: state.cropToolOpen,
-    cropToCommittedView: !state.cropToolOpen,
+    cropToCommittedView: false,
+    showCommittedCropOverlay: !state.cropToolOpen,
   });
 
   updateCropUi();
