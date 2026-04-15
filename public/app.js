@@ -1576,9 +1576,9 @@ const getInstructionRows = (pattern) => {
 
 const renderPalette = () => {
   const usedCounts = state.pattern ? new Map(state.pattern.counts) : new Map();
-  refs.paletteGrid.innerHTML = getPaletteEntries()
-    .slice()
-    .sort((left, right) => {
+  const paletteEntries = getPaletteEntries().slice();
+  const sortPaletteEntries = (entries) =>
+    entries.sort((left, right) => {
       const usedDifference = (usedCounts.get(right.id) || 0) - (usedCounts.get(left.id) || 0);
       if (usedDifference !== 0) {
         return usedDifference;
@@ -1590,8 +1590,20 @@ const renderPalette = () => {
         return activeDifference;
       }
 
-      return left.code.localeCompare(right.code, undefined, { numeric: true, sensitivity: "base" });
-    })
+      return left.code.localeCompare(right.code, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
+  const presetEntries = sortPaletteEntries(
+    paletteEntries.filter((entry) => !entry.id.startsWith("custom-")),
+  );
+  const customEntries = sortPaletteEntries(
+    paletteEntries.filter((entry) => entry.id.startsWith("custom-")),
+  );
+
+  refs.paletteGrid.innerHTML = [...presetEntries, ...customEntries]
     .map((entry) => {
       const checked = state.activePaletteIds.has(entry.id);
       const inventory = getInventorySettings(entry.id);
