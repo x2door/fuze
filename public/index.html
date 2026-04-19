@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260414-6" />
+    <link rel="stylesheet" href="/styles.css?v=20260417-13" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -81,6 +81,31 @@
               </p>
             </div>
 
+            <article id="sourcePreviewCard" class="preview-card setup-source-card">
+              <div class="preview-head">
+                <h3>Original</h3>
+                <span id="imageMeta">No image loaded</span>
+              </div>
+              <canvas id="sourceCanvas" class="source-canvas" width="320" height="320"></canvas>
+              <div class="canvas-tools">
+                <span id="cropMeta" class="helper">Open Crop image to adjust the visible area.</span>
+                <div class="preview-actions">
+                  <button id="openCropToolBtn" class="button button-secondary crop-control-button" type="button">
+                    Crop image
+                  </button>
+                  <button id="saveCropBtn" class="button button-primary crop-control-button crop-tool-action" type="button">
+                    Save
+                  </button>
+                  <button id="cancelCropBtn" class="button button-secondary crop-control-button crop-tool-action" type="button">
+                    Cancel
+                  </button>
+                  <button id="resetCropBtn" class="button button-secondary crop-control-button" type="button">
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </article>
+
             <article class="mobile-live-preview-card">
               <div class="preview-head mobile-live-preview-head">
                 <h3>Live preview</h3>
@@ -105,171 +130,179 @@
               <canvas id="mobilePreviewCanvas" width="320" height="320"></canvas>
             </article>
 
-            <div class="grid two">
-              <div class="control-group">
-                <label for="patternWidth">Pattern width (beads)</label>
-                <input
-                  id="patternWidth"
-                  type="number"
-                  min="8"
-                  max="220"
-                  value="64"
-                  inputmode="numeric"
-                  enterkeyhint="done"
-                />
-              </div>
-              <div class="control-group">
-                <label for="patternHeight">Pattern height (beads)</label>
-                <input
-                  id="patternHeight"
-                  type="number"
-                  min="8"
-                  max="220"
-                  value="64"
-                  inputmode="numeric"
-                  enterkeyhint="done"
-                />
-              </div>
-            </div>
+            <details class="setup-section setup-section-open" open>
+              <summary class="setup-section-summary">
+                <span>Pattern size</span>
+              </summary>
+              <div class="setup-section-body">
+                <div class="grid two">
+                  <div class="control-group">
+                    <label for="patternWidth">Pattern width (beads)</label>
+                    <input
+                      id="patternWidth"
+                      type="number"
+                      min="8"
+                      max="220"
+                      value="64"
+                      inputmode="numeric"
+                      enterkeyhint="done"
+                    />
+                  </div>
+                  <div class="control-group">
+                    <label for="patternHeight">Pattern height (beads)</label>
+                    <input
+                      id="patternHeight"
+                      type="number"
+                      min="8"
+                      max="220"
+                      value="64"
+                      inputmode="numeric"
+                      enterkeyhint="done"
+                    />
+                  </div>
+                </div>
 
-            <div class="grid two compact-row">
-              <label class="toggle">
-                <input id="lockAspect" type="checkbox" checked />
-                <span>Keep image aspect ratio</span>
-              </label>
-              <label class="toggle">
-                <input id="showSymbols" type="checkbox" checked />
-                <span>Show color codes on large cells</span>
-              </label>
-            </div>
-
-            <div class="grid two compact-row">
-              <label class="toggle">
-                <input id="mirrorPattern" type="checkbox" />
-                <span>Mirror pattern horizontally</span>
-              </label>
-            </div>
-
-            <div class="control-group background-tools-card">
-              <label>Background cleanup</label>
-              <div class="background-tools-actions">
-                <button id="autoDetectBackgroundBtn" class="button button-secondary" type="button">
-                  Detect background
-                </button>
-                <button id="pickBackgroundBtn" class="button button-secondary" type="button">
-                  Pick from image
-                </button>
-                <button id="clearBackgroundPickBtn" class="button button-secondary" type="button">
-                  Clear
-                </button>
+                <div class="grid two compact-row">
+                  <label class="toggle">
+                    <input id="lockAspect" type="checkbox" checked />
+                    <span>Keep image aspect ratio</span>
+                  </label>
+                  <label class="toggle">
+                    <input id="mirrorPattern" type="checkbox" />
+                    <span>Mirror pattern horizontally</span>
+                  </label>
+                </div>
               </div>
-              <div class="background-pick-meta">
-                <span id="backgroundSwatch" class="swatch background-swatch"></span>
-                <span id="backgroundColorValue" class="helper">No background color selected</span>
+            </details>
+
+            <details class="setup-section">
+              <summary class="setup-section-summary">
+                <span>Background cleanup</span>
+              </summary>
+              <div class="setup-section-body">
+                <div class="control-group background-tools-card">
+                  <div class="background-tools-actions">
+                    <button id="autoDetectBackgroundBtn" class="button button-secondary" type="button">
+                      Detect background
+                    </button>
+                    <button id="pickBackgroundBtn" class="button button-secondary" type="button">
+                      Pick from image
+                    </button>
+                    <button id="clearBackgroundPickBtn" class="button button-secondary" type="button">
+                      Clear
+                    </button>
+                  </div>
+                  <div class="background-pick-meta">
+                    <span id="backgroundSwatch" class="swatch background-swatch"></span>
+                    <span id="backgroundColorValue" class="helper">No background color selected</span>
+                  </div>
+                  <label class="toggle">
+                    <input id="removePickedBackground" type="checkbox" />
+                    <span>Make picked background transparent</span>
+                  </label>
+                  <div class="control-group compact-control">
+                    <label for="backgroundTolerance">
+                      Background tolerance <span id="backgroundToleranceValue">24</span>
+                    </label>
+                    <input id="backgroundTolerance" type="range" min="0" max="160" step="1" value="24" />
+                    <p class="helper">
+                      Use Pick from image, then raise tolerance until the flat background disappears cleanly.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <label class="toggle">
-                <input id="removePickedBackground" type="checkbox" />
-                <span>Make picked background transparent</span>
-              </label>
-              <div class="control-group compact-control">
-                <label for="backgroundTolerance">
-                  Background tolerance <span id="backgroundToleranceValue">24</span>
-                </label>
-                <input id="backgroundTolerance" type="range" min="0" max="160" step="1" value="24" />
+            </details>
+
+            <details class="setup-section">
+              <summary class="setup-section-summary">
+                <span>Color matching</span>
+              </summary>
+              <div class="setup-section-body">
+                <div class="grid two">
+                  <div class="control-group">
+                    <label for="backgroundMode">Transparent pixels</label>
+                    <select id="backgroundMode">
+                      <option value="empty">Leave empty</option>
+                      <option value="see-through">Use See Through beads</option>
+                      <option value="white">Use White beads</option>
+                    </select>
+                  </div>
+                  <div class="control-group">
+                    <label for="ditherStrength">Color smoothing</label>
+                    <select id="ditherStrength">
+                      <option value="0">Off</option>
+                      <option value="0.35">Soft</option>
+                      <option value="0.65" selected>Balanced</option>
+                      <option value="1">Strong</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="control-group">
+                  <label for="matchingMode">Color matching mode</label>
+                  <select id="matchingMode">
+                    <option value="balanced" selected>Balanced</option>
+                    <option value="preserve-hue">Preserve hue</option>
+                    <option value="preserve-contrast">Preserve contrast</option>
+                    <option value="vivid">Prefer vivid colors</option>
+                    <option value="nearest-lab">Nearest color only</option>
+                  </select>
+                  <p class="helper">
+                    Try different matching modes when dark blues drift to black or pale colors drift to white.
+                  </p>
+                </div>
+              </div>
+            </details>
+
+            <details class="setup-section">
+              <summary class="setup-section-summary">
+                <span>Image adjustments</span>
+              </summary>
+              <div class="setup-section-body">
+                <div class="grid two">
+                  <div class="control-group">
+                    <label for="hueShift">Hue shift <span id="hueShiftValue">0deg</span></label>
+                    <input id="hueShift" type="range" min="-180" max="180" step="1" value="0" />
+                    <p class="helper">Shift the image color wheel before bead matching.</p>
+                  </div>
+                  <div class="control-group">
+                    <label for="brightnessBoost">Brightness <span id="brightnessValue">100%</span></label>
+                    <input id="brightnessBoost" type="range" min="50" max="180" step="1" value="100" />
+                    <p class="helper">Brighten dark areas so they are less likely to map to black.</p>
+                  </div>
+                </div>
+
+                <div class="grid two">
+                  <div class="control-group">
+                    <label for="saturationBoost">Saturation <span id="saturationValue">100%</span></label>
+                    <input id="saturationBoost" type="range" min="0" max="200" step="1" value="100" />
+                    <p class="helper">Boost muted colors so dark blues and soft tones stay colorful.</p>
+                  </div>
+                </div>
+
+                <div class="grid two">
+                  <div class="control-group">
+                    <label for="shadowLift">Shadow lift <span id="shadowLiftValue">0%</span></label>
+                    <input id="shadowLift" type="range" min="0" max="100" step="1" value="0" />
+                    <p class="helper">Open up dark regions without brightening the whole image as much.</p>
+                  </div>
+                  <div class="control-group">
+                    <label for="highlightRecovery">Highlight recovery <span id="highlightRecoveryValue">0%</span></label>
+                    <input id="highlightRecovery" type="range" min="0" max="100" step="1" value="0" />
+                    <p class="helper">Pull back bright spots so whites don’t overpower nearby detail.</p>
+                  </div>
+                </div>
+
+                <div class="preview-actions setup-secondary-actions">
+                  <button id="resetAdjustmentsBtn" class="button button-secondary" type="button">
+                    Reset adjustments to default
+                  </button>
+                </div>
                 <p class="helper">
-                  Use Pick from image, then raise tolerance until the flat background disappears cleanly.
+                  Adjustment sliders apply after you stop dragging, so it’s easier to fine-tune without lag.
                 </p>
               </div>
-            </div>
-
-            <div class="grid two">
-              <div class="control-group">
-                <label for="backgroundMode">Transparent pixels</label>
-                <select id="backgroundMode">
-                  <option value="empty">Leave empty</option>
-                  <option value="see-through">Use See Through beads</option>
-                  <option value="white">Use White beads</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="ditherStrength">Color smoothing</label>
-                <select id="ditherStrength">
-                  <option value="0">Off</option>
-                  <option value="0.35">Soft</option>
-                  <option value="0.65" selected>Balanced</option>
-                  <option value="1">Strong</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label for="matchingMode">Color matching mode</label>
-              <select id="matchingMode">
-                <option value="balanced" selected>Balanced</option>
-                <option value="preserve-hue">Preserve hue</option>
-                <option value="preserve-contrast">Preserve contrast</option>
-                <option value="vivid">Prefer vivid colors</option>
-                <option value="nearest-lab">Nearest color only</option>
-              </select>
-              <p class="helper">
-                Try different matching modes when dark blues drift to black or pale colors drift to white.
-              </p>
-            </div>
-
-            <div class="control-group">
-              <label for="inventoryBalancing">Inventory balancing</label>
-              <select id="inventoryBalancing">
-                <option value="off" selected>Off</option>
-                <option value="soft">Soft balancing</option>
-                <option value="strong">Strong balancing</option>
-              </select>
-            <p class="helper">
-              Uses your saved palette inventory values to conserve scarce bead colors and spread substitutes across the full pattern.
-            </p>
-            </div>
-
-            <div class="grid two">
-              <div class="control-group">
-                <label for="hueShift">Hue shift <span id="hueShiftValue">0deg</span></label>
-                <input id="hueShift" type="range" min="-180" max="180" step="1" value="0" />
-                <p class="helper">Shift the image color wheel before bead matching.</p>
-              </div>
-              <div class="control-group">
-                <label for="brightnessBoost">Brightness <span id="brightnessValue">100%</span></label>
-                <input id="brightnessBoost" type="range" min="50" max="180" step="1" value="100" />
-                <p class="helper">Brighten dark areas so they are less likely to map to black.</p>
-              </div>
-            </div>
-
-            <div class="grid two">
-              <div class="control-group">
-                <label for="saturationBoost">Saturation <span id="saturationValue">100%</span></label>
-                <input id="saturationBoost" type="range" min="0" max="200" step="1" value="100" />
-                <p class="helper">Boost muted colors so dark blues and soft tones stay colorful.</p>
-              </div>
-            </div>
-
-            <div class="grid two">
-              <div class="control-group">
-                <label for="shadowLift">Shadow lift <span id="shadowLiftValue">0%</span></label>
-                <input id="shadowLift" type="range" min="0" max="100" step="1" value="0" />
-                <p class="helper">Open up dark regions without brightening the whole image as much.</p>
-              </div>
-              <div class="control-group">
-                <label for="highlightRecovery">Highlight recovery <span id="highlightRecoveryValue">0%</span></label>
-                <input id="highlightRecovery" type="range" min="0" max="100" step="1" value="0" />
-                <p class="helper">Pull back bright spots so whites don’t overpower nearby detail.</p>
-              </div>
-            </div>
-
-            <div class="preview-actions setup-secondary-actions">
-              <button id="resetAdjustmentsBtn" class="button button-secondary" type="button">
-                Reset adjustments to default
-              </button>
-            </div>
-            <p class="helper">
-              Adjustment sliders apply after you stop dragging, so it’s easier to fine-tune without lag.
-            </p>
+            </details>
 
             <div class="panel-actions">
               <button id="generateBtn" class="button button-primary" type="button">
@@ -284,22 +317,38 @@
                 <h3>Available bead colors</h3>
                 <p>Turn colors on or off, add your own colors, and save inventory for each bead color.</p>
               </div>
-              <button id="resetPaletteBtn" class="text-button" type="button">Use all</button>
+              <div class="palette-heading-actions">
+                <button id="selectAllPaletteBtn" class="text-button" type="button">Select all</button>
+                <button id="clearPaletteBtn" class="text-button" type="button">Clear all</button>
+              </div>
             </div>
             <div class="control-group">
               <label for="palettePreset">Set preset</label>
               <select id="palettePreset">
-                <option value="artkal-c-starter">Artkal C mini starter (10)</option>
-                <option value="hama-classic-30">Hama classic-inspired (30)</option>
+                <option value="artkal-c-official">Artkal C official</option>
+                <option value="hama-numeric-full">Hama numeric chart</option>
+                <option value="perler-open-stock">Perler open stock</option>
                 <option value="perler-large-tray">Perler Mini Large Tray (16)</option>
                 <option value="perler-summer-tray">Perler Summer Mini Tray (16)</option>
                 <option value="perler-neutral-tray">Perler Mini Neutral Tray (8)</option>
                 <option value="shinshin-48">Shinshin Creation 48</option>
               </select>
               <p id="palettePresetNote" class="helper">
-                Start from a common mini bead set, then add manual colors on top.
+                Start from a brand palette, then customize the displayed code for your own bead storage system.
               </p>
             </div>
+            <div class="control-group">
+              <label for="inventoryBalancing">Inventory balancing</label>
+              <select id="inventoryBalancing">
+                <option value="off" selected>Off</option>
+                <option value="soft">Soft balancing</option>
+                <option value="strong">Strong balancing</option>
+              </select>
+              <p class="helper">
+                Uses your saved palette inventory values to conserve scarce bead colors and spread substitutes across the full pattern.
+              </p>
+            </div>
+            <div id="paletteGrid" class="palette-grid"></div>
             <div class="custom-color-card">
               <div class="grid two">
                 <div class="control-group compact-control">
@@ -327,7 +376,6 @@
                 </button>
               </div>
             </div>
-            <div id="paletteGrid" class="palette-grid"></div>
           </section>
         </section>
 
@@ -361,39 +409,98 @@
             </article>
           </div>
 
-          <div class="preview-grid">
-            <article id="sourcePreviewCard" class="preview-card">
-              <div class="preview-head">
-                <h3>Original</h3>
-                <span id="imageMeta">No image loaded</span>
-              </div>
-              <canvas id="sourceCanvas" class="source-canvas" width="320" height="320"></canvas>
-              <div class="canvas-tools">
-                <span id="cropMeta" class="helper">Open Crop image to adjust the visible area.</span>
-                <div class="preview-actions">
-                  <button id="openCropToolBtn" class="button button-secondary crop-control-button" type="button">
-                    Crop image
-                  </button>
-                  <button id="saveCropBtn" class="button button-primary crop-control-button crop-tool-action" type="button">
-                    Save
-                  </button>
-                  <button id="cancelCropBtn" class="button button-secondary crop-control-button crop-tool-action" type="button">
-                    Cancel
-                  </button>
-                  <button id="resetCropBtn" class="button button-secondary crop-control-button" type="button">
-                    Reset
-                  </button>
-                </div>
-              </div>
-            </article>
+          <div class="preview-grid preview-grid-single">
             <article id="patternPreviewCard" class="preview-card">
               <div class="preview-head">
                 <h3>Bead pattern</h3>
                 <span id="patternMeta">Waiting for generation</span>
               </div>
-              <canvas id="patternCanvas" width="320" height="320"></canvas>
-              <div class="canvas-tools pattern-actions">
+              <div id="patternCardPlaceholder" class="pattern-card-placeholder">
+                Upload an image to start generating the bead pattern preview.
+              </div>
+              <div id="patternCanvasShell" class="pattern-canvas-shell" hidden>
+                <div id="patternEmptyState" class="pattern-empty-state">
+                  Upload an image and generate a pattern to preview it here.
+                </div>
+                <canvas id="patternCanvas" width="320" height="320"></canvas>
+              </div>
+              <div id="patternEditorToolbar" class="pattern-editor-toolbar" hidden>
+                <div class="preview-actions pattern-editor-actions">
+                  <button
+                    id="editPatternBtn"
+                    class="button button-secondary compact-tool-button compact-tool-button-wide"
+                    type="button"
+                    title="Edit beads"
+                    aria-label="Edit beads"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    id="undoEditBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Undo"
+                    aria-label="Undo"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    id="redoEditBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Redo"
+                    aria-label="Redo"
+                  >
+                    Redo
+                  </button>
+                  <button
+                    id="resetEditsBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Reset edits"
+                    aria-label="Reset edits"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    id="zoomOutBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Zoom out"
+                    aria-label="Zoom out"
+                  >
+                    -
+                  </button>
+                  <button
+                    id="zoomFitBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Fit to view"
+                    aria-label="Fit to view"
+                  >
+                    Fit
+                  </button>
+                  <button
+                    id="zoomInBtn"
+                    class="button button-secondary compact-tool-button"
+                    type="button"
+                    title="Zoom in"
+                    aria-label="Zoom in"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div id="editStatus" class="helper pattern-edit-status" hidden>Generate a pattern to start editing.</div>
+              <div id="editColorStrip" class="edit-color-strip empty-state" hidden>
+                Generate a pattern to choose an edit color.
+              </div>
+              <div id="patternActions" class="canvas-tools pattern-actions" hidden>
                 <div class="preview-actions">
+                  <label class="inline-toggle">
+                    <input id="showSymbols" type="checkbox" checked />
+                    <span>Show color codes</span>
+                  </label>
                   <button id="downloadBtn" class="button button-secondary" type="button">
                     Download pixelated PNG
                   </button>
@@ -444,6 +551,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260414-6" type="module"></script>
+    <script src="/app.js?v=20260417-13" type="module"></script>
   </body>
 </html>

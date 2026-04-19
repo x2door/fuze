@@ -1,3 +1,9 @@
+import {
+  ARTKAL_C_OFFICIAL_FULL,
+  HAMA_NUMERIC_FULL,
+  PERLER_OPEN_STOCK,
+} from "./brand-palettes.generated.js";
+
 const EDGE_SNAP_PX = 24;
 const NEAR_FULL_CROP_RATIO = 0.995;
 const CROP_HANDLE_SIZE = 12;
@@ -178,7 +184,16 @@ const state = {
   activePaletteIds: new Set(PALETTE.map((entry) => entry.id)),
   customPalette: [],
   inventoryByColorId: {},
+  codeOverridesByColorId: {},
+  patternBase: null,
   pattern: null,
+  patternOverridesByIndex: {},
+  patternUndoStack: [],
+  patternRedoStack: [],
+  editMode: false,
+  selectedEditColorId: null,
+  patternZoom: 1,
+  patternView: null,
 };
 
 const refs = {
@@ -220,9 +235,23 @@ const refs = {
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
+  editPatternBtn: document.getElementById("editPatternBtn"),
+  undoEditBtn: document.getElementById("undoEditBtn"),
+  redoEditBtn: document.getElementById("redoEditBtn"),
+  resetEditsBtn: document.getElementById("resetEditsBtn"),
+  zoomInBtn: document.getElementById("zoomInBtn"),
+  zoomOutBtn: document.getElementById("zoomOutBtn"),
+  zoomFitBtn: document.getElementById("zoomFitBtn"),
+  editStatus: document.getElementById("editStatus"),
+  editColorStrip: document.getElementById("editColorStrip"),
+  patternEmptyState: document.getElementById("patternEmptyState"),
+  patternCardPlaceholder: document.getElementById("patternCardPlaceholder"),
   toggleSetupBtn: document.getElementById("toggleSetupBtn"),
   sourcePreviewCard: document.getElementById("sourcePreviewCard"),
   patternPreviewCard: document.getElementById("patternPreviewCard"),
+  patternCanvasShell: document.getElementById("patternCanvasShell"),
+  patternEditorToolbar: document.getElementById("patternEditorToolbar"),
+  patternActions: document.getElementById("patternActions"),
   patternResultsGrid: document.getElementById("patternResultsGrid"),
   openCropToolBtn: document.getElementById("openCropToolBtn"),
   saveCropBtn: document.getElementById("saveCropBtn"),
@@ -235,7 +264,8 @@ const refs = {
   customColorHex: document.getElementById("customColorHex"),
   customColorPicker: document.getElementById("customColorPicker"),
   addCustomColorBtn: document.getElementById("addCustomColorBtn"),
-  resetPaletteBtn: document.getElementById("resetPaletteBtn"),
+  selectAllPaletteBtn: document.getElementById("selectAllPaletteBtn"),
+  clearPaletteBtn: document.getElementById("clearPaletteBtn"),
   paletteGrid: document.getElementById("paletteGrid"),
   activePaletteCount: document.getElementById("activePaletteCount"),
   statsGrid: document.getElementById("statsGrid"),
@@ -308,9 +338,11 @@ const rgbToLab = ({ r, g, b }) => {
 const createPaletteEntry = (entry, fallbackCode) => {
   const rgb = hexToRgb(entry.hex);
   const lab = rgbToLab(rgb);
+  const officialCode = entry.code || fallbackCode;
   return {
     ...entry,
-    code: entry.code || fallbackCode,
+    code: officialCode,
+    officialCode,
     rgb,
     lab,
     chroma: Math.sqrt(lab.a * lab.a + lab.b * lab.b),
@@ -323,22 +355,28 @@ const artkalStyle48Entries = PALETTE.map((entry, index) =>
 
 const PALETTE_PRESETS = [
   {
+    id: "artkal-c-official",
+    name: `Artkal C official (${ARTKAL_C_OFFICIAL_FULL.length})`,
+    note: "Official Artkal C-series mini palette with the default C and CE brand codes from the 2024 RGB chart.",
+    entries: ARTKAL_C_OFFICIAL_FULL.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
+    id: "hama-numeric-full",
+    name: `Hama numeric chart (${HAMA_NUMERIC_FULL.length})`,
+    note: "Official Hama numeric mini or midi code chart with sampled swatches from the current colour chart.",
+    entries: HAMA_NUMERIC_FULL.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
+    id: "perler-open-stock",
+    name: `Perler open stock (${PERLER_OPEN_STOCK.length})`,
+    note: "Open-stock Perler reference built from the official 2025 color guide using Perler product codes as the default labels.",
+    entries: PERLER_OPEN_STOCK.map((entry) => createPaletteEntry(entry, entry.code)),
+  },
+  {
     id: "shinshin-48",
     name: "Shinshin Creation 48",
     note: "Based on the Shinshin Creation 24,000 mini 2.6mm kit with 48 vivid pastel colors.",
     entries: artkalStyle48Entries,
-  },
-  {
-    id: "artkal-c-starter",
-    name: "Artkal C mini starter (10)",
-    note: "Compact 2.6mm-style starter palette for quick portraits and sprites.",
-    entries: ARTKAL_C_STARTER.map((entry) => createPaletteEntry(entry, entry.code)),
-  },
-  {
-    id: "hama-classic-30",
-    name: "Hama classic-inspired (30)",
-    note: "Balanced classic set for portraits, icons, and general minis.",
-    entries: HAMA_CLASSIC_30.map((entry) => createPaletteEntry(entry, entry.code)),
   },
   {
     id: "perler-large-tray",
@@ -366,6 +404,100 @@ const getPalettePreset = (presetId) =>
 const getBasePaletteEntries = () => getPalettePreset(state.selectedPalettePresetId).entries;
 
 const getPaletteEntries = () => [...getBasePaletteEntries(), ...state.customPalette];
+
+const getOfficialCode = (entry) => entry?.officialCode || entry?.code || entry?.id || "";
+
+const getEffectiveCode = (entry) => {
+  const override = state.codeOverridesByColorId[entry.id];
+  return String(override || getOfficialCode(entry)).trim();
+};
+
+const getPaletteSortKey = (entry) => entry.sortKey || getOfficialCode(entry);
+
+const getResolvedPaletteEntries = () =>
+  getPaletteEntries().map((entry) => ({
+    ...entry,
+    code: getEffectiveCode(entry),
+  }));
+
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const escapeAttribute = (value) => escapeHtml(value);
+
+const getPaletteDisplayLabel = (entry) => {
+  const officialCode = getOfficialCode(entry);
+  const effectiveCode = getEffectiveCode(entry);
+  const name = String(entry.name || "").trim();
+
+  if (!name || name === effectiveCode) {
+    return effectiveCode;
+  }
+
+  if (name === officialCode && effectiveCode === officialCode) {
+    return effectiveCode;
+  }
+
+  return `${effectiveCode} - ${name}`;
+};
+
+const WHITE_FILL_TARGET = createPaletteEntry({
+  id: "fill-white-target",
+  code: "WHITE",
+  name: "White",
+  hex: "#f7f7f3",
+});
+
+const TRANSPARENT_FILL_TARGET = createPaletteEntry({
+  id: "fill-transparent-target",
+  code: "CLEAR",
+  name: "See Through",
+  hex: "#babec6",
+});
+
+const findBestSpecialFillEntry = (entries, mode) => {
+  if (!entries.length) {
+    return null;
+  }
+
+  const targetMatchers =
+    mode === "white"
+      ? [
+          (entry) => entry.id === "white",
+          (entry) => /^white$/i.test(entry.name),
+          (entry) => /^white$/i.test(entry.code),
+          (entry) => /\bwhite\b/i.test(entry.id),
+        ]
+      : [
+          (entry) => entry.id === "see-through",
+          (entry) => /\b(see[ -]?through|transparent|clear|translucent)\b/i.test(entry.name),
+          (entry) => /\b(see[ -]?through|transparent|clear|translucent)\b/i.test(entry.code),
+          (entry) => /\b(see[ -]?through|transparent|clear|translucent)\b/i.test(entry.id),
+        ];
+
+  for (const matches of targetMatchers) {
+    const exactMatch = entries.find(matches);
+    if (exactMatch) {
+      return exactMatch;
+    }
+  }
+
+  const target = mode === "white" ? WHITE_FILL_TARGET : TRANSPARENT_FILL_TARGET;
+  return entries.reduce((bestMatch, candidate) => {
+    if (!bestMatch) {
+      return candidate;
+    }
+
+    const candidateDistance = deltaE2000(candidate.lab, target.lab);
+    const bestDistance = deltaE2000(bestMatch.lab, target.lab);
+    return candidateDistance < bestDistance ? candidate : bestMatch;
+  }, null);
+};
 
 const getLabHueDegrees = (labColor) => {
   const angle = (Math.atan2(labColor.b, labColor.a) * 180) / Math.PI;
@@ -523,6 +655,23 @@ const resizeCanvasToDisplaySize = (canvas) => {
     canvas.width = width;
     canvas.height = height;
   }
+};
+
+const resizeCanvasToCssSize = (canvas, cssWidth, cssHeight) => {
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  const safeWidth = Math.max(1, Math.round(cssWidth));
+  const safeHeight = Math.max(1, Math.round(cssHeight));
+  canvas.style.width = `${safeWidth}px`;
+  canvas.style.height = `${safeHeight}px`;
+  const width = Math.max(1, Math.round(safeWidth * pixelRatio));
+  const height = Math.max(1, Math.round(safeHeight * pixelRatio));
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  return pixelRatio;
 };
 
 const drawSourcePreviewInto = (ctx, canvas, options = {}) => {
@@ -1377,9 +1526,13 @@ const setMobileView = (view, options = {}) => {
 };
 
 const refreshPalettePresetUi = () => {
+  [...refs.palettePreset.options].forEach((option) => {
+    const preset = getPalettePreset(option.value);
+    option.textContent = preset.name;
+  });
   const preset = getPalettePreset(state.selectedPalettePresetId);
   refs.palettePreset.value = preset.id;
-  refs.palettePresetNote.textContent = `${preset.note} Manual colors stay available on top of the preset.`;
+  refs.palettePresetNote.textContent = `${preset.note} Presets start with all colors enabled by default, and you can use Clear all to rebuild the palette from only the beads you actually own. Manual colors stay available on top of the preset, and you can override the displayed bead code for each color below.`;
 };
 
 const applyPalettePreset = (presetId) => {
@@ -1427,6 +1580,9 @@ const savePreferences = () => {
           colorId,
           sanitizeInventoryEntry(settings),
         ]),
+      ),
+      codeOverridesByColorId: Object.fromEntries(
+        Object.entries(state.codeOverridesByColorId).filter(([, code]) => String(code || "").trim()),
       ),
       inventoryBalancing: refs.inventoryBalancing.value,
       backgroundSampleHex: state.backgroundSampleHex,
@@ -1481,22 +1637,28 @@ const loadPreferences = () => {
     }
 
     const availableIds = new Set(getPaletteEntries().map((entry) => entry.id));
-    if (Array.isArray(saved.activePaletteIds) && saved.activePaletteIds.length > 0) {
+    if (Array.isArray(saved.activePaletteIds)) {
       state.activePaletteIds = new Set(
         saved.activePaletteIds.filter((id) => typeof id === "string" && availableIds.has(id)),
       );
-      if (state.activePaletteIds.size === 0) {
-        state.activePaletteIds = new Set(availableIds);
-      }
     } else {
       state.activePaletteIds = new Set(availableIds);
     }
 
     if (saved.inventoryByColorId && typeof saved.inventoryByColorId === "object") {
       state.inventoryByColorId = Object.fromEntries(
-        Object.entries(saved.inventoryByColorId)
-          .filter(([colorId]) => availableIds.has(colorId))
-          .map(([colorId, settings]) => [colorId, sanitizeInventoryEntry(settings)]),
+        Object.entries(saved.inventoryByColorId).map(([colorId, settings]) => [
+          colorId,
+          sanitizeInventoryEntry(settings),
+        ]),
+      );
+    }
+
+    if (saved.codeOverridesByColorId && typeof saved.codeOverridesByColorId === "object") {
+      state.codeOverridesByColorId = Object.fromEntries(
+        Object.entries(saved.codeOverridesByColorId)
+          .filter(([, code]) => String(code || "").trim())
+          .map(([colorId, code]) => [colorId, String(code).trim()]),
       );
     }
 
@@ -1533,7 +1695,7 @@ const loadPreferences = () => {
 const getUsedColors = (pattern) =>
   [...pattern.counts.entries()]
     .map(([id, count]) => ({
-      color: getPaletteEntries().find((entry) => entry.id === id),
+      color: getResolvedPaletteEntries().find((entry) => entry.id === id),
       count,
     }))
     .filter((item) => item.color)
@@ -1547,12 +1709,100 @@ const getInventorySettings = (colorId) => {
   };
 };
 
+const hasActivePaletteSelection = () => state.activePaletteIds.size > 0;
+
+const getEditablePaletteEntries = () =>
+  getResolvedPaletteEntries().filter((entry) => state.activePaletteIds.has(entry.id));
+
+const resetPatternEditState = ({ keepSelection = false } = {}) => {
+  state.patternOverridesByIndex = {};
+  state.patternUndoStack = [];
+  state.patternRedoStack = [];
+  if (!keepSelection) {
+    state.selectedEditColorId = null;
+  }
+};
+
+const getPatternSignature = (pattern) => {
+  if (!pattern) {
+    return "";
+  }
+
+  const crop = pattern.cropRect || { x: 0, y: 0, width: pattern.width, height: pattern.height };
+  return [
+    pattern.width,
+    pattern.height,
+    pattern.mirrored ? 1 : 0,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+  ].join(":");
+};
+
+const ensureSelectedEditColor = () => {
+  const editableEntries = getEditablePaletteEntries();
+  if (!editableEntries.length) {
+    state.selectedEditColorId = null;
+    return;
+  }
+
+  if (!editableEntries.some((entry) => entry.id === state.selectedEditColorId)) {
+    state.selectedEditColorId = editableEntries[0].id;
+  }
+};
+
+const applyPatternOverrides = (basePattern) => {
+  if (!basePattern) {
+    return null;
+  }
+
+  const editableEntries = new Map(getResolvedPaletteEntries().map((entry) => [entry.id, entry]));
+  const cells = basePattern.cells.slice();
+
+  Object.entries(state.patternOverridesByIndex).forEach(([indexText, colorId]) => {
+    const index = Number(indexText);
+    if (!Number.isInteger(index) || index < 0 || index >= cells.length) {
+      return;
+    }
+
+    cells[index] = editableEntries.get(colorId) || cells[index];
+  });
+
+  const counts = new Map();
+  cells.forEach((cell) => {
+    if (!cell) {
+      return;
+    }
+    counts.set(cell.id, (counts.get(cell.id) || 0) + 1);
+  });
+
+  return {
+    ...basePattern,
+    cells,
+    counts,
+  };
+};
+
+const getPatternEditCount = () => Object.keys(state.patternOverridesByIndex).length;
+
 const setInventorySettings = (colorId, patch) => {
   const current = getInventorySettings(colorId);
   state.inventoryByColorId[colorId] = {
     ...current,
     ...patch,
   };
+};
+
+const setCodeOverride = (entry, value) => {
+  const trimmedValue = String(value || "").trim();
+  const officialCode = getOfficialCode(entry);
+  if (!trimmedValue || trimmedValue === officialCode) {
+    delete state.codeOverridesByColorId[entry.id];
+    return;
+  }
+
+  state.codeOverridesByColorId[entry.id] = trimmedValue;
 };
 
 const getInstructionRows = (pattern) => {
@@ -1588,7 +1838,7 @@ const getInstructionRows = (pattern) => {
           return `${chunk.count}x empty`;
         }
 
-        const color = getPaletteEntries().find((entry) => entry.id === chunk.id);
+        const color = getResolvedPaletteEntries().find((entry) => entry.id === chunk.id);
         return `${chunk.count}x ${color.code}`;
       })
       .join(" | ");
@@ -1603,9 +1853,9 @@ const getInstructionRows = (pattern) => {
 
 const renderPalette = () => {
   const usedCounts = state.pattern ? new Map(state.pattern.counts) : new Map();
-  refs.paletteGrid.innerHTML = getPaletteEntries()
-    .slice()
-    .sort((left, right) => {
+  const paletteEntries = getResolvedPaletteEntries().slice();
+  const sortPaletteEntries = (entries) =>
+    entries.sort((left, right) => {
       const usedDifference = (usedCounts.get(right.id) || 0) - (usedCounts.get(left.id) || 0);
       if (usedDifference !== 0) {
         return usedDifference;
@@ -1617,11 +1867,27 @@ const renderPalette = () => {
         return activeDifference;
       }
 
-      return left.code.localeCompare(right.code, undefined, { numeric: true, sensitivity: "base" });
-    })
+      return getPaletteSortKey(left).localeCompare(getPaletteSortKey(right), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
+  const presetEntries = sortPaletteEntries(
+    paletteEntries.filter((entry) => !entry.id.startsWith("custom-")),
+  );
+  const customEntries = sortPaletteEntries(
+    paletteEntries.filter((entry) => entry.id.startsWith("custom-")),
+  );
+
+  refs.paletteGrid.innerHTML = [...presetEntries, ...customEntries]
     .map((entry) => {
       const checked = state.activePaletteIds.has(entry.id);
       const inventory = getInventorySettings(entry.id);
+      const officialCode = getOfficialCode(entry);
+      const effectiveCode = getEffectiveCode(entry);
+      const displayLabel = getPaletteDisplayLabel(entry);
+      const hasCodeOverride = effectiveCode !== officialCode;
       const ownedValue = inventory.owned === "" ? "" : String(inventory.owned);
       const usedCount = usedCounts.get(entry.id) || 0;
       const difference =
@@ -1652,9 +1918,20 @@ const renderPalette = () => {
           <label class="palette-main">
             <input type="checkbox" data-palette-id="${entry.id}" ${checked ? "checked" : ""} />
             <span class="swatch" style="background:${entry.hex}"></span>
-            <span class="palette-name">${entry.code} - ${entry.name}<br />${entry.hex.toUpperCase()}</span>
+            <span class="palette-name">${escapeHtml(displayLabel)}<br />${escapeHtml(entry.hex.toUpperCase())}${hasCodeOverride ? ` · official ${escapeHtml(officialCode)}` : ""}</span>
           </label>
           <div class="palette-inventory">
+            <label class="inventory-row palette-code-row">
+              <span>Code</span>
+              <input
+                type="text"
+                maxlength="24"
+                class="inventory-input palette-code-input"
+                data-palette-code="${entry.id}"
+                value="${escapeAttribute(effectiveCode)}"
+                placeholder="${escapeAttribute(officialCode)}"
+              />
+            </label>
             <label class="inventory-row">
               <span>Owned</span>
               <input
@@ -1692,10 +1969,8 @@ const renderPalette = () => {
 
       if (event.target.checked) {
         state.activePaletteIds.add(paletteId);
-      } else if (state.activePaletteIds.size > 1) {
-        state.activePaletteIds.delete(paletteId);
       } else {
-        event.target.checked = true;
+        state.activePaletteIds.delete(paletteId);
       }
 
       updatePaletteCounter();
@@ -1708,7 +1983,34 @@ const renderPalette = () => {
     });
   });
 
-  refs.paletteGrid.querySelectorAll(".palette-inventory-input").forEach((input) => {
+  refs.paletteGrid.querySelectorAll(".palette-code-input").forEach((input) => {
+    const applyCodeValue = (event) => {
+      const colorId = event.target.dataset.paletteCode;
+      const paletteEntry = getPaletteEntries().find((entry) => entry.id === colorId);
+      if (!paletteEntry) {
+        return;
+      }
+
+      setCodeOverride(paletteEntry, event.target.value);
+      savePreferences();
+      renderPalette();
+      renderLegend();
+      renderInstructions();
+      if (state.image) {
+        generatePattern();
+      }
+    };
+
+    input.addEventListener("change", applyCodeValue);
+    input.addEventListener("blur", applyCodeValue);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.currentTarget.blur();
+      }
+    });
+  });
+
+  refs.paletteGrid.querySelectorAll("input[data-palette-inventory]").forEach((input) => {
     const applyInventoryValue = (event) => {
       const colorId = event.target.dataset.paletteInventory;
       if (!colorId) {
@@ -2030,7 +2332,8 @@ const makePattern = () => {
   const data = source.data;
   const ditherAmount = Number(refs.ditherStrength.value) || 0;
   const backgroundMode = refs.backgroundMode.value;
-  const activePalette = getPaletteEntries().filter((entry) => state.activePaletteIds.has(entry.id));
+  const resolvedPaletteEntries = getResolvedPaletteEntries();
+  const activePalette = resolvedPaletteEntries.filter((entry) => state.activePaletteIds.has(entry.id));
   const cells = [];
   const counts = new Map();
   const totalCells = width * height;
@@ -2047,8 +2350,14 @@ const makePattern = () => {
           continue;
         }
 
-        const fillId = backgroundMode === "white" ? "white" : "see-through";
-        const fillColor = getPaletteEntries().find((entry) => entry.id === fillId);
+        const fillColor = findBestSpecialFillEntry(
+          resolvedPaletteEntries,
+          backgroundMode === "white" ? "white" : "transparent",
+        );
+        if (!fillColor) {
+          cells.push(null);
+          continue;
+        }
         cells.push(fillColor);
         counts.set(fillColor.id, (counts.get(fillColor.id) || 0) + 1);
         continue;
@@ -2139,28 +2448,235 @@ const drawPatternGrid = (ctx, pattern, options) => {
   }
 };
 
-const drawPatternPreview = () => {
-  resizeCanvasToDisplaySize(refs.patternCanvas);
-  clearCanvas(patternCtx, refs.patternCanvas);
+const renderPatternEditUi = () => {
+  const editableEntries = getEditablePaletteEntries();
+  const hasPattern = Boolean(state.pattern);
+  const hasImage = Boolean(state.image);
+  const editCount = getPatternEditCount();
+  const selectedEntry = editableEntries.find((entry) => entry.id === state.selectedEditColorId) || null;
 
-  if (!state.pattern) {
+  refs.editPatternBtn.disabled = !hasPattern;
+  refs.editPatternBtn.textContent = state.editMode ? "Done" : "Edit";
+  refs.editPatternBtn.title = state.editMode ? "Done editing" : "Edit beads";
+  refs.editPatternBtn.setAttribute("aria-label", state.editMode ? "Done editing" : "Edit beads");
+  refs.editPatternBtn.classList.toggle("edit-mode-active", state.editMode && hasPattern);
+  refs.undoEditBtn.disabled = !hasPattern || state.patternUndoStack.length === 0;
+  refs.redoEditBtn.disabled = !hasPattern || state.patternRedoStack.length === 0;
+  refs.resetEditsBtn.disabled = !hasPattern || editCount === 0;
+  refs.zoomInBtn.disabled = !hasPattern;
+  refs.zoomOutBtn.disabled = !hasPattern;
+  refs.zoomFitBtn.disabled = !hasPattern;
+  refs.downloadBtn.disabled = !hasPattern;
+  refs.exportSheetBtn.disabled = !hasPattern;
+  refs.patternEditorToolbar.hidden = !hasImage;
+  refs.patternCanvasShell.hidden = !hasImage;
+  refs.patternActions.hidden = !hasImage;
+  refs.patternCardPlaceholder.hidden = hasImage;
+  refs.patternCanvas.classList.toggle("pattern-canvas-editing", state.editMode && hasPattern);
+  refs.editStatus.hidden = !hasPattern || (!state.editMode && editCount === 0);
+  refs.editColorStrip.hidden = !hasPattern || !state.editMode;
+
+  if (!hasPattern) {
+    refs.editStatus.textContent = "";
+    refs.editColorStrip.className = "edit-color-strip empty-state";
+    refs.editColorStrip.textContent = "Generate a pattern to choose an edit color.";
     return;
   }
 
-  const availableWidth = refs.patternCanvas.width - 24;
-  const availableHeight = refs.patternCanvas.height - 24;
-  const cellSize = Math.max(
+  refs.editStatus.textContent = state.editMode
+    ? `Editing one bead at a time. Selected ${selectedEntry ? getPaletteDisplayLabel(selectedEntry) : "color"}${editCount ? ` · ${formatNumber(editCount)} manual edits` : ""}.`
+    : editCount
+      ? `${formatNumber(editCount)} manual edits saved. Enter Edit beads to keep refining them.`
+      : "Enter Edit beads to replace one bead at a time.";
+
+  refs.editColorStrip.className = "edit-color-strip";
+  refs.editColorStrip.innerHTML = editableEntries
+    .map((entry) => {
+      const selected = entry.id === state.selectedEditColorId;
+      return `
+        <button
+          type="button"
+          class="edit-color-chip ${selected ? "edit-color-chip-selected" : ""}"
+          data-edit-color-id="${entry.id}"
+          aria-pressed="${selected}"
+          title="${escapeAttribute(getPaletteDisplayLabel(entry))}"
+        >
+          <span class="edit-color-swatch" style="background:${entry.hex}"></span>
+          <span>${escapeHtml(entry.code)}</span>
+        </button>
+      `;
+    })
+    .join("");
+
+  refs.editColorStrip.querySelectorAll("[data-edit-color-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedEditColorId = button.dataset.editColorId;
+      renderPatternEditUi();
+      renderLegend();
+    });
+  });
+};
+
+const getPatternCanvasCellIndexFromEvent = (event) => {
+  if (!state.pattern || !state.patternView) {
+    return null;
+  }
+
+  const rect = refs.patternCanvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const { left, top, cellSize } = state.patternView;
+  const cellX = Math.floor((x - left) / cellSize);
+  const cellY = Math.floor((y - top) / cellSize);
+
+  if (
+    cellX < 0 ||
+    cellY < 0 ||
+    cellX >= state.pattern.width ||
+    cellY >= state.pattern.height
+  ) {
+    return null;
+  }
+
+  return cellY * state.pattern.width + cellX;
+};
+
+const applyPatternEdit = (cellIndex, nextColorId) => {
+  if (!state.patternBase || !nextColorId) {
+    return;
+  }
+
+  const baseCell = state.patternBase.cells[cellIndex];
+  const previousColorId = state.patternOverridesByIndex[cellIndex] || baseCell?.id || null;
+  if (previousColorId === nextColorId) {
+    return;
+  }
+
+  state.patternUndoStack.push({
+    cellIndex,
+    previousColorId,
+    nextColorId,
+  });
+  state.patternRedoStack = [];
+
+  const baseColorId = baseCell?.id || null;
+  if (nextColorId === baseColorId) {
+    delete state.patternOverridesByIndex[cellIndex];
+  } else {
+    state.patternOverridesByIndex[cellIndex] = nextColorId;
+  }
+
+  state.pattern = applyPatternOverrides(state.patternBase);
+  drawPatternPreview();
+  renderStats();
+  renderLegend();
+  renderInstructions();
+  renderPatternEditUi();
+};
+
+const replayPatternEdit = (entry, direction) => {
+  if (!state.patternBase || !entry) {
+    return;
+  }
+
+  const targetColorId = direction === "undo" ? entry.previousColorId : entry.nextColorId;
+  const baseCell = state.patternBase.cells[entry.cellIndex];
+  const baseColorId = baseCell?.id || null;
+
+  if (!targetColorId || targetColorId === baseColorId) {
+    delete state.patternOverridesByIndex[entry.cellIndex];
+  } else {
+    state.patternOverridesByIndex[entry.cellIndex] = targetColorId;
+  }
+
+  state.pattern = applyPatternOverrides(state.patternBase);
+  drawPatternPreview();
+  renderStats();
+  renderLegend();
+  renderInstructions();
+  renderPatternEditUi();
+};
+
+const drawPatternPreview = () => {
+  const shellWidth = Math.max(240, refs.patternCanvasShell?.clientWidth || refs.patternCanvas.clientWidth || 320);
+  const shellHeight = Math.max(240, refs.patternCanvasShell?.clientHeight || 420);
+
+  if (!state.pattern) {
+    state.patternView = null;
+    refs.patternCanvasShell.classList.add("pattern-canvas-shell-empty");
+    refs.patternCanvasShell.classList.remove("pattern-canvas-shell-scrolling");
+    refs.patternCanvas.hidden = true;
+    refs.patternEmptyState.hidden = false;
+    refs.patternCanvas.style.width = "";
+    refs.patternCanvas.style.height = "";
+    resizeCanvasToDisplaySize(refs.patternCanvas);
+    clearCanvas(patternCtx, refs.patternCanvas);
+    renderPatternEditUi();
+    return;
+  }
+
+  const availableWidth = shellWidth - 24;
+  const availableHeight = shellHeight - 24;
+  const baseCellSize = Math.max(
     1,
     Math.floor(Math.min(availableWidth / state.pattern.width, availableHeight / state.pattern.height)),
   );
-  const patternWidthPx = state.pattern.width * cellSize;
-  const patternHeightPx = state.pattern.height * cellSize;
-  const left = Math.floor((refs.patternCanvas.width - patternWidthPx) / 2);
-  const top = Math.floor((refs.patternCanvas.height - patternHeightPx) / 2);
+  const zoom = clamp(state.patternZoom || 1, 1, 24);
+  const useScrollingShell = state.editMode || zoom > 1;
+  let cellSize;
+  let left;
+  let top;
+  let cssWidth;
+  let cssHeight;
+
+  refs.patternCanvasShell.classList.remove("pattern-canvas-shell-empty");
+  refs.patternCanvas.hidden = false;
+  refs.patternEmptyState.hidden = true;
+
+  if (useScrollingShell) {
+    refs.patternCanvasShell.classList.add("pattern-canvas-shell-scrolling");
+    cellSize = Math.max(1, Math.round(baseCellSize * zoom));
+    const patternWidthPx = state.pattern.width * cellSize;
+    const patternHeightPx = state.pattern.height * cellSize;
+    cssWidth = Math.max(shellWidth, patternWidthPx + 24);
+    cssHeight = Math.max(shellHeight, patternHeightPx + 24);
+    const pixelRatio = resizeCanvasToCssSize(refs.patternCanvas, cssWidth, cssHeight);
+    patternCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    patternCtx.clearRect(0, 0, cssWidth, cssHeight);
+    left = Math.floor((cssWidth - patternWidthPx) / 2);
+    top = Math.floor((cssHeight - patternHeightPx) / 2);
+  } else {
+    refs.patternCanvasShell.classList.remove("pattern-canvas-shell-scrolling");
+    refs.patternCanvas.style.width = "";
+    refs.patternCanvas.style.height = "";
+    resizeCanvasToDisplaySize(refs.patternCanvas);
+    const rect = refs.patternCanvas.getBoundingClientRect();
+    cssWidth = Math.max(1, rect.width);
+    cssHeight = Math.max(1, rect.height);
+    const pixelRatio = refs.patternCanvas.width / cssWidth;
+    patternCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    patternCtx.clearRect(0, 0, cssWidth, cssHeight);
+    const fitCellSize = Math.max(
+      1,
+      Math.floor(Math.min((cssWidth - 24) / state.pattern.width, (cssHeight - 24) / state.pattern.height)),
+    );
+    cellSize = fitCellSize;
+    left = Math.floor((cssWidth - state.pattern.width * cellSize) / 2);
+    top = Math.floor((cssHeight - state.pattern.height * cellSize) / 2);
+  }
+
   const showSymbols = refs.showSymbols.checked && cellSize >= 18;
 
+  state.patternView = {
+    left,
+    top,
+    cellSize,
+    width: state.pattern.width * cellSize,
+    height: state.pattern.height * cellSize,
+  };
+
   patternCtx.fillStyle = getThemeValue("--canvas-fill", "#16181f");
-  patternCtx.fillRect(0, 0, refs.patternCanvas.width, refs.patternCanvas.height);
+  patternCtx.fillRect(0, 0, cssWidth, cssHeight);
   drawPatternGrid(patternCtx, state.pattern, {
     left,
     top,
@@ -2168,6 +2684,7 @@ const drawPatternPreview = () => {
     showSymbols,
     drawGrid: true,
   });
+  renderPatternEditUi();
   drawMobileSetupPreview();
 };
 
@@ -2230,7 +2747,9 @@ const renderLegend = () => {
   if (!state.pattern) {
     refs.legendMeta.textContent = "0 colors used";
     refs.legendList.className = "legend-list empty-state";
-    refs.legendList.textContent = "Generate a pattern to see bead counts.";
+    refs.legendList.textContent = hasActivePaletteSelection()
+      ? "Generate a pattern to see bead counts."
+      : "Select the bead colors you actually own to build your working palette.";
     return;
   }
 
@@ -2258,13 +2777,14 @@ const renderLegend = () => {
             : difference >= 0
               ? "inventory-status inventory-ok"
               : "inventory-status inventory-short";
+        const selected = color.id === state.selectedEditColorId;
 
         return `
-        <article class="legend-item ${inventory.lowInventory ? "legend-item-low" : ""}">
+        <article class="legend-item ${inventory.lowInventory ? "legend-item-low" : ""} ${selected ? "legend-item-selected" : ""}" data-legend-color-id="${color.id}">
           <span class="swatch" style="background:${color.hex}"></span>
           <div class="legend-meta">
-            <strong>${color.code} - ${color.name}</strong>
-            <span>${color.hex.toUpperCase()}</span>
+            <strong>${escapeHtml(getPaletteDisplayLabel(color))}</strong>
+            <span>${escapeHtml(color.hex.toUpperCase())}</span>
           </div>
           <div class="legend-side">
             <span class="legend-count">${formatNumber(count)} used</span>
@@ -2280,13 +2800,27 @@ const renderLegend = () => {
       },
     )
     .join("");
+
+  refs.legendList.querySelectorAll("[data-legend-color-id]").forEach((item) => {
+    item.addEventListener("click", () => {
+      if (!state.editMode) {
+        return;
+      }
+
+      state.selectedEditColorId = item.dataset.legendColorId;
+      renderPatternEditUi();
+      renderLegend();
+    });
+  });
 };
 
 const renderInstructions = () => {
   if (!state.pattern) {
     refs.instructionMeta.textContent = "Rows will appear here";
     refs.instructionList.className = "instruction-list empty-state";
-    refs.instructionList.textContent = "Upload an image and click Generate pattern.";
+    refs.instructionList.textContent = hasActivePaletteSelection()
+      ? "Upload an image and click Generate pattern."
+      : "Select at least one bead color to generate row instructions.";
     return;
   }
 
@@ -2299,10 +2833,10 @@ const renderInstructions = () => {
         <article class="instruction-row">
           <div class="instruction-row-top">
             <strong>Row ${String(row.rowNumber).padStart(2, "0")}</strong>
-            <span class="instruction-row-meta">${row.chunkText}</span>
+            <span class="instruction-row-meta">${escapeHtml(row.chunkText)}</span>
           </div>
           <div class="row-pattern">
-            <code>${row.codeText}</code>
+            <code>${escapeHtml(row.codeText)}</code>
           </div>
         </article>
       `,
@@ -2313,7 +2847,7 @@ const renderInstructions = () => {
 const renderStats = () => {
   if (!state.pattern) {
     setStats([
-      { label: "Pattern size", value: "Waiting for image" },
+      { label: "Pattern size", value: state.image && !hasActivePaletteSelection() ? "No colors selected" : "Waiting for image" },
       { label: "Total beads", value: "-" },
       { label: "Rows", value: "-" },
       { label: "Distinct colors used", value: "-" },
@@ -2338,12 +2872,36 @@ const generatePattern = () => {
     return;
   }
 
-  state.pattern = makePattern();
+  if (!hasActivePaletteSelection()) {
+    state.editMode = false;
+    state.pattern = null;
+    renderPalette();
+    drawPatternPreview();
+    renderStats();
+    renderLegend();
+    renderInstructions();
+    renderPatternEditUi();
+    refs.patternMeta.textContent = "Select at least one bead color";
+    return;
+  }
+
+  const nextBasePattern = makePattern();
+  const canReuseEdits =
+    state.patternBase && getPatternSignature(state.patternBase) === getPatternSignature(nextBasePattern);
+
+  if (!canReuseEdits) {
+    resetPatternEditState({ keepSelection: false });
+  }
+
+  state.patternBase = nextBasePattern;
+  ensureSelectedEditColor();
+  state.pattern = applyPatternOverrides(state.patternBase);
   renderPalette();
   drawPatternPreview();
   renderStats();
   renderLegend();
   renderInstructions();
+  renderPatternEditUi();
 
   refs.patternMeta.textContent = `${state.pattern.width} x ${state.pattern.height} beads`;
   if (state.pattern.mirrored) {
@@ -2479,6 +3037,7 @@ const openCropTool = () => {
     return;
   }
 
+  state.editMode = false;
   clearCropInteractionState();
   state.backgroundPickerActive = false;
   renderBackgroundUi();
@@ -2679,10 +3238,14 @@ const loadImageFile = (file) => {
 
     image.onload = () => {
       state.cropToolOpen = false;
+      state.editMode = false;
+      state.patternZoom = 1;
       state.image = image;
       state.imageName = file.name;
       state.imageWidth = image.width;
       state.imageHeight = image.height;
+      state.patternBase = null;
+      resetPatternEditState({ keepSelection: false });
       state.cropRect = createFullCropRect();
       state.cropDraftRect = null;
       state.cropStartPoint = null;
@@ -3122,6 +3685,67 @@ refs.generateBtn.addEventListener("click", () => {
     setMobileView("pattern");
   }
 });
+refs.editPatternBtn.addEventListener("click", () => {
+  if (!state.pattern) {
+    return;
+  }
+
+  state.editMode = !state.editMode;
+  ensureSelectedEditColor();
+  renderPatternEditUi();
+  renderLegend();
+});
+refs.undoEditBtn.addEventListener("click", () => {
+  const entry = state.patternUndoStack.pop();
+  if (!entry) {
+    return;
+  }
+
+  state.patternRedoStack.push(entry);
+  replayPatternEdit(entry, "undo");
+});
+refs.redoEditBtn.addEventListener("click", () => {
+  const entry = state.patternRedoStack.pop();
+  if (!entry) {
+    return;
+  }
+
+  state.patternUndoStack.push(entry);
+  replayPatternEdit(entry, "redo");
+});
+refs.resetEditsBtn.addEventListener("click", () => {
+  if (!state.patternBase) {
+    return;
+  }
+
+  resetPatternEditState({ keepSelection: true });
+  state.pattern = applyPatternOverrides(state.patternBase);
+  drawPatternPreview();
+  renderStats();
+  renderLegend();
+  renderInstructions();
+  renderPatternEditUi();
+});
+refs.zoomInBtn.addEventListener("click", () => {
+  if (!state.pattern) {
+    return;
+  }
+
+  state.patternZoom = clamp(Number((state.patternZoom + 0.5).toFixed(2)), 1, 24);
+  drawPatternPreview();
+});
+refs.zoomOutBtn.addEventListener("click", () => {
+  if (!state.pattern) {
+    return;
+  }
+
+  state.patternZoom = clamp(Number((state.patternZoom - 0.5).toFixed(2)), 1, 24);
+  drawPatternPreview();
+});
+refs.zoomFitBtn.addEventListener("click", () => {
+  state.patternZoom = 1;
+  drawPatternPreview();
+});
 refs.downloadBtn.addEventListener("click", downloadPatternOnly);
 refs.exportSheetBtn.addEventListener("click", exportInstructionSheet);
 refs.openCropToolBtn.addEventListener("click", openCropTool);
@@ -3141,13 +3765,26 @@ refs.cropToolBackdrop.addEventListener("click", (event) => {
     cancelCropTool();
   }
 });
-refs.resetPaletteBtn.addEventListener("click", () => {
+refs.selectAllPaletteBtn.addEventListener("click", () => {
   state.activePaletteIds = new Set(getPaletteEntries().map((entry) => entry.id));
   updatePaletteCounter();
   savePreferences();
   renderPalette();
   if (state.image) {
     generatePattern();
+  }
+});
+refs.clearPaletteBtn.addEventListener("click", () => {
+  state.activePaletteIds = new Set();
+  updatePaletteCounter();
+  savePreferences();
+  renderPalette();
+  if (state.image) {
+    generatePattern();
+  } else {
+    renderLegend();
+    renderInstructions();
+    renderStats();
   }
 });
 refs.customColorPicker.addEventListener("input", () => {
@@ -3173,6 +3810,18 @@ refs.toggleSetupBtn.addEventListener("click", () => {
 refs.sourceCanvas.addEventListener("pointerdown", startCrop);
 refs.sourceCanvas.addEventListener("pointermove", moveCrop);
 refs.sourceCanvas.addEventListener("pointerup", finishCrop);
+refs.patternCanvas.addEventListener("click", (event) => {
+  if (!state.editMode || !state.pattern || !state.selectedEditColorId) {
+    return;
+  }
+
+  const cellIndex = getPatternCanvasCellIndexFromEvent(event);
+  if (cellIndex === null) {
+    return;
+  }
+
+  applyPatternEdit(cellIndex, state.selectedEditColorId);
+});
 refs.sourceCanvas.addEventListener("pointercancel", () => {
   clearCropInteractionState();
   if (state.cropToolOpen && !state.cropDraftRect) {
@@ -3211,6 +3860,7 @@ updatePaletteCounter();
 renderStats();
 renderLegend();
 renderInstructions();
+renderPatternEditUi();
 updateAdjustmentLabels();
 refreshImageMeta();
 renderMobileView();
