@@ -354,6 +354,16 @@ const artkalStyle48Entries = PALETTE.map((entry, index) =>
   createPaletteEntry(entry, String(index + 1).padStart(2, "0")),
 );
 
+const perlerOpenStockEntries = PERLER_OPEN_STOCK.map((entry, index) =>
+  createPaletteEntry(
+    {
+      ...entry,
+      code: String(index + 1).padStart(2, "0"),
+    },
+    String(index + 1).padStart(2, "0"),
+  ),
+);
+
 const PALETTE_PRESETS = [
   {
     id: "artkal-c-official",
@@ -370,8 +380,8 @@ const PALETTE_PRESETS = [
   {
     id: "perler-open-stock",
     name: `Perler open stock (${PERLER_OPEN_STOCK.length})`,
-    note: "Open-stock Perler reference built from the official 2025 color guide using Perler product codes as the default labels.",
-    entries: PERLER_OPEN_STOCK.map((entry) => createPaletteEntry(entry, entry.code)),
+    note: "Open-stock Perler reference built from the official 2025 color guide, with compact numeric bead labels so the codes fit inside the pattern cells.",
+    entries: perlerOpenStockEntries,
   },
   {
     id: "shinshin-48",
