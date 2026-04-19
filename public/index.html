@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260417-13" />
+    <link rel="stylesheet" href="/styles.css?v=20260419-1" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -228,13 +228,8 @@
                     </select>
                   </div>
                   <div class="control-group">
-                    <label for="ditherStrength">Color smoothing</label>
-                    <select id="ditherStrength">
-                      <option value="0">Off</option>
-                      <option value="0.35">Soft</option>
-                      <option value="0.65" selected>Balanced</option>
-                      <option value="1">Strong</option>
-                    </select>
+                    <label for="ditherStrength">Color smoothing <span id="ditherStrengthValue">65%</span></label>
+                    <input id="ditherStrength" type="range" min="0" max="100" step="1" value="65" />
                   </div>
                 </div>
 
@@ -551,6 +546,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260417-13" type="module"></script>
+    <script src="/app.js?v=20260419-1" type="module"></script>
   </body>
 </html>

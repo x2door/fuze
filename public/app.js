@@ -217,6 +217,7 @@ const refs = {
   backgroundTolerance: document.getElementById("backgroundTolerance"),
   backgroundToleranceValue: document.getElementById("backgroundToleranceValue"),
   ditherStrength: document.getElementById("ditherStrength"),
+  ditherStrengthValue: document.getElementById("ditherStrengthValue"),
   matchingMode: document.getElementById("matchingMode"),
   inventoryBalancing: document.getElementById("inventoryBalancing"),
   hueShift: document.getElementById("hueShift"),
@@ -1078,6 +1079,7 @@ const autoDetectBackgroundColor = () => {
 };
 
 const updateAdjustmentLabels = () => {
+  refs.ditherStrengthValue.textContent = `${Math.round((Number(refs.ditherStrength.value) || 0))}%`;
   refs.hueShiftValue.textContent = `${getHueShiftDegrees()}deg`;
   refs.brightnessValue.textContent = `${Math.round(getBrightnessMultiplier() * 100)}%`;
   refs.saturationValue.textContent = `${Math.round(getSaturationMultiplier() * 100)}%`;
@@ -1585,6 +1587,7 @@ const savePreferences = () => {
         Object.entries(state.codeOverridesByColorId).filter(([, code]) => String(code || "").trim()),
       ),
       inventoryBalancing: refs.inventoryBalancing.value,
+      ditherStrength: Number(refs.ditherStrength.value) || 0,
       backgroundSampleHex: state.backgroundSampleHex,
       backgroundRemovalEnabled: state.backgroundRemovalEnabled,
       backgroundTolerance: state.backgroundTolerance,
@@ -1667,6 +1670,10 @@ const loadPreferences = () => {
       [...refs.inventoryBalancing.options].some((option) => option.value === saved.inventoryBalancing)
     ) {
       refs.inventoryBalancing.value = saved.inventoryBalancing;
+    }
+
+    if (Number.isFinite(Number(saved.ditherStrength))) {
+      refs.ditherStrength.value = String(clamp(Number(saved.ditherStrength), 0, 100));
     }
 
     const backgroundHex = normalizeHexColor(saved.backgroundSampleHex);
@@ -2330,7 +2337,7 @@ const makePattern = () => {
   const { width, height } = getTargetDimensions();
   const source = buildWorkingImageData(width, height);
   const data = source.data;
-  const ditherAmount = Number(refs.ditherStrength.value) || 0;
+  const ditherAmount = (Number(refs.ditherStrength.value) || 0) / 100;
   const backgroundMode = refs.backgroundMode.value;
   const resolvedPaletteEntries = getResolvedPaletteEntries();
   const activePalette = resolvedPaletteEntries.filter((entry) => state.activePaletteIds.has(entry.id));
@@ -3616,7 +3623,12 @@ refs.backgroundMode.addEventListener("change", () => {
     generatePattern();
   }
 });
+refs.ditherStrength.addEventListener("input", () => {
+  updateAdjustmentLabels();
+});
 refs.ditherStrength.addEventListener("change", () => {
+  updateAdjustmentLabels();
+  savePreferences();
   if (state.image) {
     generatePattern();
   }
