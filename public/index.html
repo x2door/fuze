@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260419-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260419-3" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -322,7 +322,7 @@
               <select id="palettePreset">
                 <option value="artkal-c-official">Artkal C official</option>
                 <option value="hama-numeric-full">Hama numeric chart</option>
-                <option value="perler-open-stock">Perler open stock</option>
+                <option value="perler-open-stock">Perler Midi / Standard open stock</option>
                 <option value="perler-large-tray">Perler Mini Large Tray (16)</option>
                 <option value="perler-summer-tray">Perler Summer Mini Tray (16)</option>
                 <option value="perler-neutral-tray">Perler Mini Neutral Tray (8)</option>
@@ -496,6 +496,13 @@
                     <input id="showSymbols" type="checkbox" checked />
                     <span>Show color codes</span>
                   </label>
+                  <label class="export-format-picker" for="exportFormat">
+                    <span>Format</span>
+                    <select id="exportFormat">
+                      <option value="png" selected>PNG</option>
+                      <option value="jpeg">JPEG</option>
+                    </select>
+                  </label>
                   <button id="downloadBtn" class="button button-secondary" type="button">
                     Download pixelated PNG
                   </button>
@@ -546,6 +553,6 @@
 
     <div id="cropToolBackdrop" class="crop-tool-backdrop" hidden></div>
 
-    <script src="/app.js?v=20260419-2" type="module"></script>
+    <script src="/app.js?v=20260419-3" type="module"></script>
   </body>
 </html>

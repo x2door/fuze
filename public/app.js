@@ -236,6 +236,7 @@ const refs = {
   generateBtn: document.getElementById("generateBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   exportSheetBtn: document.getElementById("exportSheetBtn"),
+  exportFormat: document.getElementById("exportFormat"),
   editPatternBtn: document.getElementById("editPatternBtn"),
   undoEditBtn: document.getElementById("undoEditBtn"),
   redoEditBtn: document.getElementById("redoEditBtn"),
@@ -379,8 +380,8 @@ const PALETTE_PRESETS = [
   },
   {
     id: "perler-open-stock",
-    name: `Perler open stock (${PERLER_OPEN_STOCK.length})`,
-    note: "Open-stock Perler reference built from the official 2025 color guide, with compact numeric bead labels so the codes fit inside the pattern cells.",
+    name: `Perler Midi / Standard open stock (${PERLER_OPEN_STOCK.length})`,
+    note: "Perler 5mm open-stock reference built from the official 2025 color guide, with compact numeric bead labels so the codes fit inside the pattern cells.",
     entries: perlerOpenStockEntries,
   },
   {
@@ -1603,6 +1604,7 @@ const savePreferences = () => {
       backgroundTolerance: state.backgroundTolerance,
       desktopSetupCollapsed: state.desktopSetupCollapsed,
       themeMode: state.themeMode,
+      exportFormat: refs.exportFormat.value === "jpeg" ? "jpeg" : "png",
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -1699,11 +1701,15 @@ const loadPreferences = () => {
     if (saved.themeMode === "light" || saved.themeMode === "dark") {
       state.themeMode = saved.themeMode;
     }
+    if (saved.exportFormat === "jpeg" || saved.exportFormat === "png") {
+      refs.exportFormat.value = saved.exportFormat;
+    }
 
     refreshPalettePresetUi();
     renderBackgroundUi();
     renderDesktopLayout();
     renderTheme();
+    refreshExportFormatUi();
   } catch (error) {
     console.warn("Unable to load saved palette preferences.", error);
   }
@@ -2831,6 +2837,30 @@ const renderLegend = () => {
   });
 };
 
+const getSelectedExportFormat = () => {
+  if (refs.exportFormat.value === "jpeg") {
+    return {
+      extension: "jpg",
+      mimeType: "image/jpeg",
+      quality: 0.92,
+      label: "JPEG",
+    };
+  }
+
+  return {
+    extension: "png",
+    mimeType: "image/png",
+    quality: undefined,
+    label: "PNG",
+  };
+};
+
+const refreshExportFormatUi = () => {
+  const { label } = getSelectedExportFormat();
+  refs.downloadBtn.textContent = `Download pixelated ${label}`;
+  refs.exportSheetBtn.textContent = `Export instruction sheet ${label}`;
+};
+
 const renderInstructions = () => {
   if (!state.pattern) {
     refs.instructionMeta.textContent = "Rows will appear here";
@@ -3283,10 +3313,11 @@ const loadImageFile = (file) => {
   reader.readAsDataURL(file);
 };
 
-const triggerCanvasDownload = (canvas, filename) => {
+const triggerCanvasDownload = (canvas, filename, options = {}) => {
+  const { mimeType = "image/png", quality } = options;
   const link = document.createElement("a");
   link.download = filename;
-  link.href = canvas.toDataURL("image/png");
+  link.href = canvas.toDataURL(mimeType, quality);
   link.click();
 };
 
@@ -3295,6 +3326,7 @@ const downloadPatternOnly = () => {
     return;
   }
 
+  const exportFormat = getSelectedExportFormat();
   const safeName = (state.imageName || "pattern").replace(/\.[^/.]+$/, "");
   const cellSize = Math.max(12, Math.min(28, Math.floor(1800 / state.pattern.width)));
   const canvas = document.createElement("canvas");
@@ -3313,7 +3345,11 @@ const downloadPatternOnly = () => {
     drawGrid: true,
   });
 
-  triggerCanvasDownload(canvas, `${safeName}-pixelated-pattern.png`);
+  triggerCanvasDownload(
+    canvas,
+    `${safeName}-pixelated-pattern.${exportFormat.extension}`,
+    exportFormat,
+  );
 };
 
 const wrapText = (ctx, text, maxWidth) => {
@@ -3355,6 +3391,7 @@ const exportInstructionSheet = () => {
     return;
   }
 
+  const exportFormat = getSelectedExportFormat();
   const safeName = (state.imageName || "pattern").replace(/\.[^/.]+$/, "");
   const cropRect = getCommittedCropRect();
   const usedColors = getUsedColors(state.pattern);
@@ -3525,7 +3562,11 @@ const exportInstructionSheet = () => {
     instructionY += rowHeight;
   });
 
-  triggerCanvasDownload(canvas, `${safeName}-instruction-sheet.png`);
+  triggerCanvasDownload(
+    canvas,
+    `${safeName}-instruction-sheet.${exportFormat.extension}`,
+    exportFormat,
+  );
 };
 
 refs.imageUpload.addEventListener("change", (event) => {
@@ -3770,6 +3811,10 @@ refs.zoomFitBtn.addEventListener("click", () => {
 });
 refs.downloadBtn.addEventListener("click", downloadPatternOnly);
 refs.exportSheetBtn.addEventListener("click", exportInstructionSheet);
+refs.exportFormat.addEventListener("change", () => {
+  refreshExportFormatUi();
+  savePreferences();
+});
 refs.openCropToolBtn.addEventListener("click", openCropTool);
 refs.saveCropBtn.addEventListener("click", saveCropTool);
 refs.cancelCropBtn.addEventListener("click", cancelCropTool);
@@ -3875,6 +3920,7 @@ window.addEventListener("keydown", (event) => {
 clearCanvas(sourceCtx, refs.sourceCanvas);
 clearCanvas(patternCtx, refs.patternCanvas);
 loadPreferences();
+refreshExportFormatUi();
 refreshPalettePresetUi();
 renderBackgroundUi();
 renderPalette();
